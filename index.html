@@ -715,7 +715,8 @@ function openClient(id) {
       }).join('')
     }
     <div style="display:flex;gap:8px;margin-top:1rem">
-      <button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="deleteClient('${id}')"><i class="ti ti-trash"></i> Supprimer</button>
+      <button class="btn btn-sm" onclick="copyMeeting('${id}')"><i class="ti ti-copy"></i> Copier le CR</button>
+      <button class="btn btn-sm btn-primary" onclick="resendEmail('${id}')"><i class="ti ti-mail"></i> Envoyer email</button>
     </div>
   `;
   openModal('modal-meeting');

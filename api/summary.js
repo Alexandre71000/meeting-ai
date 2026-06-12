@@ -22,4 +22,22 @@ module.exports = async function handler(req, res) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
     };
-    const req2 = https.request(options, (
+    const req2 = https.request(options, (r) => {
+      let data = '';
+      r.on('data', (chunk) => { data += chunk; });
+      r.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const summary = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          res.status(200).json({ summary });
+        } catch (e) {
+          res.status(500).json({ error: 'Parse error' });
+        }
+        resolve();
+      });
+    });
+    req2.on('error', (e) => { res.status(500).json({ error: e.message }); resolve(); });
+    req2.write(body);
+    req2.end();
+  });
+};

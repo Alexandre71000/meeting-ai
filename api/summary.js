@@ -12,13 +12,13 @@ module.exports = async function handler(req, res) {
 
   const body = JSON.stringify({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { maxOutputTokens: 1024, temperature: 0.3 }
+    generationConfig: { thinkingConfig: { thinkingLevel: "HIGH" } }
   });
 
   return new Promise((resolve) => {
     const options = {
       hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-3-flash-preview:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      path: `/v1beta/models/gemini-3-flash-preview:streamGenerateContent?key=${process.env.GEMINI_API_KEY}`,
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
     };
@@ -28,10 +28,14 @@ module.exports = async function handler(req, res) {
       r.on('end', () => {
         try {
           const json = JSON.parse(data);
-          const summary = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const items = Array.isArray(json) ? json : [json];
+          let summary = '';
+          for (const item of items) {
+            summary += item?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          }
           res.status(200).json({ summary });
         } catch (e) {
-          res.status(500).json({ error: 'Parse error' });
+          res.status(500).json({ error: 'Parse error: ' + data.substring(0, 200) });
         }
         resolve();
       });

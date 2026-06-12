@@ -14,9 +14,8 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 1024, temperature: 0.3 } })
     });
     const data = await response.json();
-    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    return res.status(200).json({ summary });
+    return res.status(200).json({ debug: data });
   } catch (error) {
-    return res.status(500).json({ error: 'Erreur génération' });
+    return res.status(500).json({ error: error.message });
   }
 }

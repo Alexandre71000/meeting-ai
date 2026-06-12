@@ -555,6 +555,17 @@ function saveMeeting() {
     updateClientDatalist();
   }
 
+  fetch('/api/sendemail', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    title: meeting.title,
+    client: meeting.client,
+    date: new Date(meeting.date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+    participants: meeting.participants,
+    summary: meeting.summary
+  })
+});
   showToast('Réunion sauvegardée ✓');
   resetAll();
   showPage('meetings');

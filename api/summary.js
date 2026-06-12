@@ -8,8 +8,34 @@ module.exports = async function handler(req, res) {
   if (!transcript || transcript.trim().length < 10) {
     return res.status(400).json({ error: 'Transcription trop courte' });
   }
-  const prompt = `Tu es un assistant pour technico-commerciaux. Génère un compte rendu professionnel.\nClient: ${client}\nObjet: ${title}\nDate: ${date}\nParticipants: ${participants}\nRetranscription: ${transcript}\n\nSections: Résumé, Points clés, Décisions, Actions à suivre, Prochaines étapes. Texte brut sans markdown.`;
+ const prompt = `Tu es un assistant expert en analyse de réunions commerciales pour technico-commerciaux. 
+Analyse cette retranscription et génère un compte rendu commercial complet et structuré en français.
 
+Contexte :
+Client : ${client}
+Objet : ${title}
+Date : ${date}
+Participants : ${participants}
+
+Retranscription :
+${transcript}
+
+Génère un compte rendu avec TOUTES les sections pertinentes parmi :
+
+1. RÉSUMÉ EXÉCUTIF (2-3 phrases synthétisant l'essentiel)
+2. CONTEXTE & PARTICIPANTS (qui était présent, rôles, contexte)
+3. BESOINS & PROBLÉMATIQUES DU CLIENT (ce que le client cherche, ses contraintes)
+4. PRODUITS & SERVICES DISCUTÉS (ce qui a été présenté, démontré)
+5. CONDITIONS COMMERCIALES (prix, remises négociées, conditions de paiement, délais)
+6. OBJECTIONS SOULEVÉES (freins, hésitations du client et réponses apportées)
+7. CONCURRENCE (concurrents mentionnés, comparaisons)
+8. NIVEAU DE MATURITÉ (où en est le client dans sa décision, probabilité de signature)
+9. DÉCISIONS PRISES (ce qui a été acté durant la réunion)
+10. ACTIONS À SUIVRE (qui fait quoi et quand, côté client et côté commercial)
+11. PROCHAINES ÉTAPES (prochain RDV, délai de réponse, relance prévue)
+12. POINTS D'ATTENTION (risques, points sensibles à surveiller)
+
+N'inclus que les sections pour lesquelles tu as des informations. Sois précis, professionnel et orienté action. Texte brut sans markdown.`;
   const body = JSON.stringify({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     generationConfig: { thinkingConfig: { thinkingLevel: "HIGH" } }

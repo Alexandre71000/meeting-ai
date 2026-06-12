@@ -8,13 +8,13 @@ module.exports = async function handler(req, res) {
   }
   const prompt = `Tu es un assistant pour technico-commerciaux. Génère un compte rendu professionnel.\nClient: ${client}\nObjet: ${title}\nDate: ${date}\nParticipants: ${participants}\nRetranscription: ${transcript}\n\nSections: Résumé, Points clés, Décisions, Actions à suivre, Prochaines étapes. Texte brut sans markdown.`;
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 1024, temperature: 0.3 } })
     });
     const data = await response.json();
-   const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.candidates?.[0]?.output || JSON.stringify(data);
+    const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     return res.status(200).json({ summary });
   } catch (error) {
     return res.status(500).json({ error: error.message });

@@ -15,7 +15,7 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --teal: #1D9E75; --teal-dark: #0F6E56; --teal-light: #E1F5EE; --teal-text: #085041;
-      --red: #E24B4A; --red-light: #FCEBEB; --amber: #EF9F27; --amber-light: #FAEEDA;
+      --red: #E24B4A; --amber: #EF9F27; --amber-light: #FAEEDA;
       --gray-50: #F9F9F8; --gray-100: #F1EFE8; --gray-200: #D3D1C7;
       --gray-400: #888780; --gray-600: #5F5E5A; --gray-900: #2C2C2A;
       --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px;
@@ -46,11 +46,14 @@
     .btn-sm { padding: 6px 12px; font-size: 13px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .form-row.single { grid-template-columns: 1fr; }
+    .form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
     .field { display: flex; flex-direction: column; gap: 5px; }
     .field label { font-size: 13px; font-weight: 500; color: var(--gray-600); }
     .field input, .field select, .field textarea { padding: 9px 12px; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 14px; font-family: inherit; background: white; color: var(--gray-900); transition: border-color 0.15s; }
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--teal); }
     .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+    .client-select-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+    .client-select-row .field { flex: 1; margin: 0; }
     .status-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); background: var(--gray-100); font-size: 13px; color: var(--gray-600); margin-bottom: 1rem; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-400); flex-shrink: 0; }
     .status-dot.recording { background: var(--red); animation: pulse 1s infinite; }
@@ -72,6 +75,7 @@
     .meeting-info { flex: 1; min-width: 0; }
     .meeting-title-text { font-size: 14px; font-weight: 500; color: var(--gray-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .meeting-meta { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .meeting-action { font-size: 12px; color: var(--amber); margin-top: 2px; font-weight: 500; }
     .meeting-chevron { color: var(--gray-200); }
     .client-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); cursor: pointer; }
     .client-item:last-child { border-bottom: none; }
@@ -80,12 +84,12 @@
     .client-count { font-size: 12px; color: var(--gray-400); }
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
     .modal-overlay.open { opacity: 1; pointer-events: all; }
-    .modal { background: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 1.5rem; width: 100%; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s; }
+    .modal { background: white; border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 1.5rem; width: 100%; max-height: 88vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s; }
     .modal-overlay.open .modal { transform: translateY(0); }
     .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
     .modal-title { font-size: 16px; font-weight: 600; }
     .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray-400); padding: 4px; }
-    .detail-section { margin-bottom: 1.5rem; }
+    .detail-section { margin-bottom: 1.25rem; }
     .detail-label { font-size: 12px; font-weight: 600; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
     .detail-content { font-size: 14px; line-height: 1.7; color: var(--gray-900); white-space: pre-wrap; background: var(--gray-50); padding: 12px; border-radius: var(--radius-md); }
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray-400); }
@@ -94,7 +98,8 @@
     .toast { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--gray-900); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 300; transition: transform 0.3s; white-space: nowrap; }
     .toast.show { transform: translateX(-50%) translateY(0); }
     .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 10px; border-radius: 20px; background: var(--teal-light); color: var(--teal-text); }
-    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } .nav-tab span { display: none; } .nav-tab i { font-size: 18px; } .controls { gap: 6px; } }
+    .action-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 10px; border-radius: 20px; background: var(--amber-light); color: #7a4f00; }
+    @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } .form-row.triple { grid-template-columns: 1fr; } .nav-tab span { display: none; } .nav-tab i { font-size: 18px; } .controls { gap: 6px; } }
   </style>
 </head>
 <body>
@@ -111,15 +116,28 @@
   </div>
 </nav>
 
+<!-- PAGE ENREGISTREMENT -->
 <div class="page active" id="page-record">
   <div class="card">
     <div class="card-title">Informations de la réunion</div>
-    <div class="form-row">
-      <div class="field"><label>Client</label><input type="text" id="rec-client" placeholder="Ex: Dupont SA" list="clients-list" /><datalist id="clients-list"></datalist></div>
-      <div class="field"><label>Objet de la réunion</label><input type="text" id="rec-title" placeholder="Ex: Présentation offre" /></div>
+
+    <div class="client-select-row">
+      <div class="field">
+        <label>Client</label>
+        <select id="rec-client">
+          <option value="">-- Sélectionner un client --</option>
+        </select>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="openAddClientFromRecord()" style="flex-shrink:0;height:38px">
+        <i class="ti ti-plus"></i> Créer
+      </button>
     </div>
+
     <div class="form-row">
+      <div class="field"><label>Objet de la réunion</label><input type="text" id="rec-title" placeholder="Ex: Présentation offre" /></div>
       <div class="field"><label>Participants</label><input type="text" id="rec-participants" placeholder="Ex: Jean Martin, Marie Durand" /></div>
+    </div>
+    <div class="form-row single">
       <div class="field"><label>Type</label>
         <select id="rec-type">
           <option value="rdv">Rendez-vous client</option>
@@ -162,9 +180,24 @@
       </div>
     </div>
     <div class="summary-content" id="summary-box"></div>
+
+    <div style="border-top:1px solid var(--gray-100);margin-top:1rem;padding-top:1rem">
+      <div class="card-title">Prochaine action (générée automatiquement)</div>
+      <div class="form-row">
+        <div class="field">
+          <label>Action à faire</label>
+          <input type="text" id="rec-next-action" placeholder="Ex: Envoyer le devis" />
+        </div>
+        <div class="field">
+          <label>Date limite</label>
+          <input type="date" id="rec-next-date" />
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- PAGE RÉUNIONS -->
 <div class="page" id="page-meetings">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
     <h2 style="font-size:18px;font-weight:600">Mes réunions</h2>
@@ -173,6 +206,7 @@
   <div class="card"><div id="meetings-list"></div></div>
 </div>
 
+<!-- PAGE CLIENTS -->
 <div class="page" id="page-clients">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
     <h2 style="font-size:18px;font-weight:600">Mes clients</h2>
@@ -181,6 +215,7 @@
   <div class="card"><div id="clients-list"></div></div>
 </div>
 
+<!-- MODAL RÉUNION / CLIENT -->
 <div class="modal-overlay" id="modal-meeting" onclick="closeModal('modal-meeting')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
@@ -191,19 +226,22 @@
   </div>
 </div>
 
+<!-- MODAL CLIENT FORM -->
 <div class="modal-overlay" id="modal-client" onclick="closeModal('modal-client')">
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <span class="modal-title">Nouveau client</span>
+      <span class="modal-title" id="modal-client-title">Nouveau client</span>
       <button class="modal-close" onclick="closeModal('modal-client')"><i class="ti ti-x"></i></button>
     </div>
-    <div class="form-row single"><div class="field"><label>Nom de l'entreprise</label><input type="text" id="new-client-name" placeholder="Dupont SA" /></div></div>
+    <div class="form-row single"><div class="field"><label>Nom de l'entreprise *</label><input type="text" id="new-client-name" placeholder="Dupont SA" /></div></div>
     <div class="form-row">
       <div class="field"><label>Contact principal</label><input type="text" id="new-client-contact" placeholder="Jean Dupont" /></div>
       <div class="field"><label>Téléphone</label><input type="text" id="new-client-phone" placeholder="06 xx xx xx xx" /></div>
     </div>
+    <div class="form-row single"><div class="field"><label>Email</label><input type="text" id="new-client-email" placeholder="jean@dupont.fr" /></div></div>
     <div class="form-row single"><div class="field"><label>Notes</label><textarea id="new-client-notes" placeholder="Informations importantes sur ce client…"></textarea></div></div>
-    <button class="btn btn-primary" onclick="saveClient()" style="width:100%;justify-content:center"><i class="ti ti-check"></i> Enregistrer</button>
+    <input type="hidden" id="edit-client-id" />
+    <button class="btn btn-primary" onclick="saveClient()" style="width:100%;justify-content:center;margin-top:8px"><i class="ti ti-check"></i> Enregistrer</button>
   </div>
 </div>
 
@@ -219,7 +257,6 @@ let recognition = null;
 let timerInterval = null;
 let seconds = 0;
 let autoSaveInterval = null;
-let currentDraft = null;
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 if (SpeechRecognition) {
@@ -236,10 +273,18 @@ function showPage(id) {
   document.getElementById('tab-' + id).classList.add('active');
   if (id === 'meetings') renderMeetings();
   if (id === 'clients') renderClients();
+  if (id === 'record') updateClientSelect();
+}
+
+function updateClientSelect(selectValue) {
+  const sel = document.getElementById('rec-client');
+  const val = selectValue || sel.value;
+  sel.innerHTML = '<option value="">-- Sélectionner un client --</option>' +
+    clients.map(c => `<option value="${c.name}" ${c.name === val ? 'selected' : ''}>${c.name}</option>`).join('');
 }
 
 function startRecording() {
-  if (!recognition) { updateStatus('', 'Utilisez Chrome ou Edge pour la retranscription.'); return; }
+  if (!recognition) { updateStatus('', 'Utilisez Chrome ou Edge.'); return; }
   finalTranscript = ''; interimTranscript = ''; seconds = 0; isRecording = true;
   recognition.onresult = (e) => {
     interimTranscript = '';
@@ -247,18 +292,18 @@ function startRecording() {
       if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
       else interimTranscript += e.results[i][0].transcript;
     }
-    updateTranscript(); autoDraft();
+    updateTranscript();
   };
   recognition.onerror = (e) => { if (e.error === 'no-speech') return; updateStatus('', 'Erreur micro : ' + e.error); stopRecording(); };
   recognition.onend = () => { if (isRecording) recognition.start(); };
   recognition.start();
   timerInterval = setInterval(() => {
     seconds++;
-    const m = String(Math.floor(seconds / 60)).padStart(2,'0');
-    const s = String(seconds % 60).padStart(2,'0');
-    document.getElementById('timer').textContent = m + ':' + s;
+    document.getElementById('timer').textContent = String(Math.floor(seconds/60)).padStart(2,'0') + ':' + String(seconds%60).padStart(2,'0');
   }, 1000);
-  autoSaveInterval = setInterval(autoDraft, 30000);
+  autoSaveInterval = setInterval(() => {
+    if (finalTranscript.trim()) localStorage.setItem('draft', JSON.stringify({ client: document.getElementById('rec-client').value, title: document.getElementById('rec-title').value, participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, transcript: finalTranscript, duration: seconds, date: new Date().toISOString() }));
+  }, 30000);
   document.getElementById('btn-start').disabled = true;
   document.getElementById('btn-stop').disabled = false;
   document.getElementById('summary-card').style.display = 'none';
@@ -272,7 +317,7 @@ function stopRecording() {
   document.getElementById('btn-start').disabled = false;
   document.getElementById('btn-stop').disabled = true;
   const words = countWords();
-  if (words >= 5) { updateStatus('ready', words + ' mots transcrits. Générez le compte rendu ou sauvegardez.'); document.getElementById('btn-summary').disabled = false; }
+  if (words >= 5) { updateStatus('ready', words + ' mots transcrits. Générez le compte rendu.'); document.getElementById('btn-summary').disabled = false; }
   else { updateStatus('', 'Enregistrement terminé.'); }
 }
 
@@ -288,12 +333,6 @@ function updateTranscript() {
 
 function countWords() { return finalTranscript.trim() ? finalTranscript.trim().split(/\s+/).length : 0; }
 
-function autoDraft() {
-  if (!finalTranscript.trim()) return;
-  currentDraft = { client: document.getElementById('rec-client').value, title: document.getElementById('rec-title').value, participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, transcript: finalTranscript, duration: seconds, date: new Date().toISOString(), summary: '' };
-  localStorage.setItem('draft', JSON.stringify(currentDraft));
-}
-
 async function generateSummary() {
   const client = document.getElementById('rec-client').value || 'Non renseigné';
   const title = document.getElementById('rec-title').value || 'Réunion';
@@ -301,18 +340,30 @@ async function generateSummary() {
   const type = document.getElementById('rec-type').options[document.getElementById('rec-type').selectedIndex].text;
   const date = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   const transcript = finalTranscript.trim();
+
   document.getElementById('summary-card').style.display = 'block';
   const box = document.getElementById('summary-box');
   box.className = 'summary-content loading';
   box.textContent = 'Analyse en cours…';
   document.getElementById('btn-summary').disabled = true;
+  document.getElementById('rec-next-action').value = '';
+  document.getElementById('rec-next-date').value = '';
+
   try {
-    const res = await fetch('/api/summary', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client, title, participants, type, date, transcript }) });
+    const res = await fetch('/api/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client, title, participants, type, date, transcript })
+    });
     const data = await res.json();
     box.className = 'summary-content';
     box.textContent = data.summary || 'Erreur lors de la génération.';
-    currentDraft = { ...currentDraft, summary: data.summary };
-  } catch { box.className = 'summary-content'; box.textContent = 'Erreur de connexion. Vérifiez votre réseau.'; }
+
+    // Extraire automatiquement la prochaine action
+    if (data.nextAction) document.getElementById('rec-next-action').value = data.nextAction;
+    if (data.nextDate) document.getElementById('rec-next-date').value = data.nextDate;
+
+  } catch { box.className = 'summary-content'; box.textContent = 'Erreur de connexion.'; }
   document.getElementById('btn-summary').disabled = false;
 }
 
@@ -321,47 +372,55 @@ function sendEmailAPI(meeting) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      title: meeting.title,
-      client: meeting.client,
+      title: meeting.title, client: meeting.client,
       date: new Date(meeting.date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
-      participants: meeting.participants,
-      summary: meeting.summary
+      participants: meeting.participants, summary: meeting.summary,
+      nextAction: meeting.nextAction || '', nextDate: meeting.nextDate || ''
     })
   });
 }
 
 function saveMeeting() {
-  const summary = document.getElementById('summary-box').textContent;
+  const clientName = document.getElementById('rec-client').value || 'Sans client';
   const meeting = {
     id: Date.now().toString(),
-    client: document.getElementById('rec-client').value || 'Sans client',
+    client: clientName,
     title: document.getElementById('rec-title').value || 'Réunion',
     participants: document.getElementById('rec-participants').value,
     type: document.getElementById('rec-type').value,
+    nextAction: document.getElementById('rec-next-action').value,
+    nextDate: document.getElementById('rec-next-date').value,
     transcript: finalTranscript,
-    summary,
+    summary: document.getElementById('summary-box').textContent,
+    notes: '',
     duration: seconds,
     date: new Date().toISOString()
   };
   meetings.unshift(meeting);
   localStorage.setItem('meetings', JSON.stringify(meetings));
   localStorage.removeItem('draft');
-  const clientName = meeting.client.trim();
+
+  // Auto-créer le client s'il n'existe pas
   if (clientName && clientName !== 'Sans client' && !clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())) {
-    clients.push({ id: Date.now().toString(), name: clientName, contact: '', phone: '', notes: '', createdAt: new Date().toISOString() });
+    clients.push({ id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() });
     localStorage.setItem('clients', JSON.stringify(clients));
-    updateClientDatalist();
   }
-  sendEmailAPI(meeting).then(() => showToast('Réunion sauvegardée et email envoyé ✓')).catch(() => showToast('Réunion sauvegardée ✓'));
+
+  sendEmailAPI(meeting).then(() => showToast('Sauvegardé et email envoyé ✓')).catch(() => showToast('Réunion sauvegardée ✓'));
   resetAll();
   showPage('meetings');
 }
 
 function renderMeetings(filter = '') {
   const list = document.getElementById('meetings-list');
-  const filtered = meetings.filter(m => m.title.toLowerCase().includes((filter||'').toLowerCase()) || m.client.toLowerCase().includes((filter||'').toLowerCase()) || (m.summary || '').toLowerCase().includes((filter||'').toLowerCase()));
+  const filtered = meetings.filter(m =>
+    (m.title||'').toLowerCase().includes((filter||'').toLowerCase()) ||
+    (m.client||'').toLowerCase().includes((filter||'').toLowerCase()) ||
+    (m.summary||'').toLowerCase().includes((filter||'').toLowerCase()) ||
+    (m.nextAction||'').toLowerCase().includes((filter||'').toLowerCase())
+  );
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-state"><i class="ti ti-files"></i><p>' + (meetings.length === 0 ? 'Aucune réunion sauvegardée.<br>Enregistrez votre première réunion !' : 'Aucun résultat.') + '</p></div>';
+    list.innerHTML = '<div class="empty-state"><i class="ti ti-files"></i><p>' + (meetings.length === 0 ? 'Aucune réunion sauvegardée.' : 'Aucun résultat.') + '</p></div>';
     return;
   }
   list.innerHTML = filtered.map(m => {
@@ -370,11 +429,13 @@ function renderMeetings(filter = '') {
     const typeIcons = { rdv:'ti-building-store', reunion:'ti-users', appel:'ti-phone', demo:'ti-presentation', negociation:'ti-writing' };
     const icon = typeIcons[m.type] || 'ti-files';
     const dur = m.duration ? Math.ceil(m.duration / 60) + ' min' : '';
+    const actionStr = m.nextAction ? (m.nextDate ? `→ ${m.nextAction} — ${new Date(m.nextDate).toLocaleDateString('fr-FR', {day:'numeric', month:'short'})}` : `→ ${m.nextAction}`) : '';
     return `<div class="meeting-item" onclick="openMeeting('${m.id}')">
       <div class="meeting-icon"><i class="ti ${icon}"></i></div>
       <div class="meeting-info">
         <div class="meeting-title-text">${m.title}</div>
         <div class="meeting-meta">${m.client} · ${dateStr}${dur ? ' · ' + dur : ''}</div>
+        ${actionStr ? `<div class="meeting-action">${actionStr}</div>` : ''}
       </div>
       <i class="ti ti-chevron-right meeting-chevron"></i>
     </div>`;
@@ -398,7 +459,23 @@ function openMeeting(id) {
     </div>
     ${m.participants ? `<div class="detail-section"><div class="detail-label">Participants</div><div class="detail-content">${m.participants}</div></div>` : ''}
     ${m.summary ? `<div class="detail-section"><div class="detail-label">Compte rendu</div><div class="detail-content">${m.summary}</div></div>` : ''}
-    <div class="detail-section"><div class="detail-label">Retranscription complète</div><div class="detail-content" style="max-height:200px;overflow-y:auto">${m.transcript}</div></div>
+
+    <div class="detail-section">
+      <div class="detail-label">Prochaine action</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="edit-action-${id}" value="${m.nextAction||''}" placeholder="Action à faire" style="flex:2;min-width:150px;padding:8px 12px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:14px;font-family:inherit" />
+        <input type="date" id="edit-date-${id}" value="${m.nextDate||''}" style="flex:1;min-width:120px;padding:8px 12px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:14px;font-family:inherit" />
+        <button class="btn btn-sm btn-primary" onclick="saveNextAction('${id}')"><i class="ti ti-check"></i></button>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-label">Notes post-réunion</div>
+      <textarea id="meeting-notes-${id}" style="width:100%;padding:10px;border:1px solid var(--gray-200);border-radius:var(--radius-md);font-size:14px;font-family:inherit;min-height:80px;resize:vertical" placeholder="Ajoutez vos notes ici…">${m.notes||''}</textarea>
+      <button class="btn btn-sm" onclick="saveNotes('${id}')" style="margin-top:6px"><i class="ti ti-device-floppy"></i> Sauvegarder les notes</button>
+    </div>
+
+    <div class="detail-section"><div class="detail-label">Retranscription complète</div><div class="detail-content" style="max-height:180px;overflow-y:auto">${m.transcript}</div></div>
     <div style="display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap">
       <button class="btn btn-sm" onclick="copyMeeting('${id}')"><i class="ti ti-copy"></i> Copier le CR</button>
       <button class="btn btn-sm btn-primary" onclick="resendEmail('${id}')"><i class="ti ti-mail"></i> Envoyer email</button>
@@ -406,6 +483,24 @@ function openMeeting(id) {
     </div>
   `;
   openModal('modal-meeting');
+}
+
+function saveNotes(id) {
+  const idx = meetings.findIndex(m => m.id === id);
+  if (idx === -1) return;
+  meetings[idx].notes = document.getElementById('meeting-notes-' + id).value;
+  localStorage.setItem('meetings', JSON.stringify(meetings));
+  showToast('Notes sauvegardées ✓');
+}
+
+function saveNextAction(id) {
+  const idx = meetings.findIndex(m => m.id === id);
+  if (idx === -1) return;
+  meetings[idx].nextAction = document.getElementById('edit-action-' + id).value;
+  meetings[idx].nextDate = document.getElementById('edit-date-' + id).value;
+  localStorage.setItem('meetings', JSON.stringify(meetings));
+  renderMeetings();
+  showToast('Action mise à jour ✓');
 }
 
 function copyMeeting(id) {
@@ -430,23 +525,28 @@ function deleteMeeting(id) {
 
 function renderClients() {
   const list = document.getElementById('clients-list');
-  if (clients.length === 0) { list.innerHTML = '<div class="empty-state"><i class="ti ti-users"></i><p>Aucun client ajouté.<br>Les clients sont créés automatiquement lors des réunions.</p></div>'; return; }
+  if (clients.length === 0) {
+    list.innerHTML = '<div class="empty-state"><i class="ti ti-users"></i><p>Aucun client.<br>Cliquez sur "+ Ajouter" pour créer votre premier client.</p></div>';
+    return;
+  }
   list.innerHTML = clients.map(c => {
     const initials = c.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-    const count = meetings.filter(m => m.client.toLowerCase() === c.name.toLowerCase()).length;
+    const count = meetings.filter(m => (m.client||'').toLowerCase() === c.name.toLowerCase()).length;
     return `<div class="client-item" onclick="openClient('${c.id}')">
       <div class="client-avatar">${initials}</div>
-      <div style="flex:1"><div class="client-name">${c.name}</div><div class="client-count">${count} réunion${count > 1 ? 's' : ''}</div></div>
+      <div style="flex:1">
+        <div class="client-name">${c.name}</div>
+        <div class="client-count">${count} réunion${count !== 1 ? 's' : ''}${c.phone ? ' · ' + c.phone : ''}</div>
+      </div>
       <i class="ti ti-chevron-right" style="color:var(--gray-200)"></i>
     </div>`;
   }).join('');
-  updateClientDatalist();
 }
 
 function openClient(id) {
   const c = clients.find(x => x.id === id);
   if (!c) return;
-  const clientMeetings = meetings.filter(m => m.client.toLowerCase() === c.name.toLowerCase());
+  const clientMeetings = meetings.filter(m => (m.client||'').toLowerCase() === c.name.toLowerCase());
   const initials = c.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
   document.getElementById('modal-meeting-title').textContent = c.name;
   document.getElementById('modal-meeting-content').innerHTML = `
@@ -455,20 +555,24 @@ function openClient(id) {
       <div>
         ${c.contact ? `<div style="font-size:14px;color:var(--gray-600)"><i class="ti ti-user" style="font-size:13px"></i> ${c.contact}</div>` : ''}
         ${c.phone ? `<div style="font-size:14px;color:var(--gray-600)"><i class="ti ti-phone" style="font-size:13px"></i> ${c.phone}</div>` : ''}
+        ${c.email ? `<div style="font-size:14px;color:var(--gray-600)"><i class="ti ti-mail" style="font-size:13px"></i> ${c.email}</div>` : ''}
       </div>
     </div>
-    ${c.notes ? `<div class="detail-section"><div class="detail-label">Notes</div><div class="detail-content">${c.notes}</div></div>` : ''}
-    <div class="detail-label" style="margin-bottom:8px">Réunions (${clientMeetings.length})</div>
-    ${clientMeetings.length === 0 ? '<p style="font-size:13px;color:var(--gray-400)">Aucune réunion pour ce client.</p>' :
+    ${c.notes ? `<div class="detail-section"><div class="detail-label">Notes client</div><div class="detail-content">${c.notes}</div></div>` : ''}
+    <div class="detail-label" style="margin-bottom:8px">Toutes les réunions (${clientMeetings.length})</div>
+    ${clientMeetings.length === 0 ? '<p style="font-size:13px;color:var(--gray-400);margin-bottom:1rem">Aucune réunion pour ce client.</p>' :
       clientMeetings.map(m => {
-        const d = new Date(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' });
-        return `<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);cursor:pointer" onclick="closeModal('modal-meeting');setTimeout(()=>openMeeting('${m.id}'),200)">
+        const d = new Date(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+        const actionStr = m.nextAction ? (m.nextDate ? `→ ${m.nextAction} (${new Date(m.nextDate).toLocaleDateString('fr-FR', {day:'numeric',month:'short'})})` : `→ ${m.nextAction}`) : '';
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100);cursor:pointer" onclick="closeModal('modal-meeting');setTimeout(()=>openMeeting('${m.id}'),200)">
           <div style="font-size:14px;font-weight:500">${m.title}</div>
-          <div style="font-size:12px;color:var(--gray-400)">${d}</div>
+          <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${d}</div>
+          ${actionStr ? `<div style="font-size:12px;color:var(--amber);margin-top:2px;font-weight:500">${actionStr}</div>` : ''}
         </div>`;
       }).join('')
     }
     <div style="display:flex;gap:8px;margin-top:1rem">
+      <button class="btn btn-sm" onclick="openEditClient('${id}')"><i class="ti ti-edit"></i> Modifier</button>
       <button class="btn btn-sm" style="color:var(--red);border-color:var(--red)" onclick="deleteClient('${id}')"><i class="ti ti-trash"></i> Supprimer</button>
     </div>
   `;
@@ -476,31 +580,55 @@ function openClient(id) {
 }
 
 function openAddClient() {
-  document.getElementById('new-client-name').value = '';
-  document.getElementById('new-client-contact').value = '';
-  document.getElementById('new-client-phone').value = '';
-  document.getElementById('new-client-notes').value = '';
+  document.getElementById('modal-client-title').textContent = 'Nouveau client';
+  ['new-client-name','new-client-contact','new-client-phone','new-client-email','new-client-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('edit-client-id').value = '';
   openModal('modal-client');
+}
+
+function openAddClientFromRecord() {
+  openAddClient();
+}
+
+function openEditClient(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  closeModal('modal-meeting');
+  setTimeout(() => {
+    document.getElementById('modal-client-title').textContent = 'Modifier le client';
+    document.getElementById('new-client-name').value = c.name;
+    document.getElementById('new-client-contact').value = c.contact || '';
+    document.getElementById('new-client-phone').value = c.phone || '';
+    document.getElementById('new-client-email').value = c.email || '';
+    document.getElementById('new-client-notes').value = c.notes || '';
+    document.getElementById('edit-client-id').value = id;
+    openModal('modal-client');
+  }, 200);
 }
 
 function saveClient() {
   const name = document.getElementById('new-client-name').value.trim();
   if (!name) { showToast('Entrez un nom de client'); return; }
-  clients.push({ id: Date.now().toString(), name, contact: document.getElementById('new-client-contact').value, phone: document.getElementById('new-client-phone').value, notes: document.getElementById('new-client-notes').value, createdAt: new Date().toISOString() });
+  const editId = document.getElementById('edit-client-id').value;
+  const data = { name, contact: document.getElementById('new-client-contact').value, phone: document.getElementById('new-client-phone').value, email: document.getElementById('new-client-email').value, notes: document.getElementById('new-client-notes').value };
+  if (editId) {
+    const idx = clients.findIndex(c => c.id === editId);
+    if (idx !== -1) clients[idx] = { ...clients[idx], ...data };
+  } else {
+    clients.push({ id: Date.now().toString(), ...data, createdAt: new Date().toISOString() });
+  }
   localStorage.setItem('clients', JSON.stringify(clients));
-  closeModal('modal-client'); renderClients(); updateClientDatalist(); showToast('Client ajouté ✓');
+  closeModal('modal-client');
+  renderClients();
+  updateClientSelect(name);
+  showToast(editId ? 'Client modifié ✓' : 'Client créé ✓');
 }
 
 function deleteClient(id) {
   if (!confirm('Supprimer ce client ?')) return;
   clients = clients.filter(c => c.id !== id);
   localStorage.setItem('clients', JSON.stringify(clients));
-  closeModal('modal-meeting'); renderClients(); showToast('Client supprimé');
-}
-
-function updateClientDatalist() {
-  const dl = document.getElementById('clients-list');
-  if (dl) dl.innerHTML = clients.map(c => `<option value="${c.name}">`).join('');
+  closeModal('modal-meeting'); renderClients(); updateClientSelect(); showToast('Client supprimé');
 }
 
 function updateStatus(state, msg) { document.getElementById('status-dot').className = 'status-dot ' + state; document.getElementById('status-text').textContent = msg; }
@@ -516,36 +644,32 @@ function resetAll() {
   document.getElementById('rec-client').value = '';
   document.getElementById('rec-title').value = '';
   document.getElementById('rec-participants').value = '';
+  document.getElementById('rec-next-action').value = '';
+  document.getElementById('rec-next-date').value = '';
   updateStatus('', 'Prêt. Renseignez les informations puis démarrez.');
 }
 
 function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('summary-box').textContent).then(() => showToast('Copié ✓')); }
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-updateClientDatalist();
+// INIT
+updateClientSelect();
 const draft = localStorage.getItem('draft');
 if (draft) {
   try {
     const d = JSON.parse(draft);
     if (d.transcript && d.transcript.length > 10) {
       finalTranscript = d.transcript;
-      document.getElementById('rec-client').value = d.client || '';
       document.getElementById('rec-title').value = d.title || '';
       document.getElementById('rec-participants').value = d.participants || '';
       updateTranscript();
-      updateStatus('ready', 'Brouillon restauré. Continuez ou générez le compte rendu.');
+      updateStatus('ready', 'Brouillon restauré.');
     }
   } catch(e) {}
 }
-if (!SpeechRecognition) { updateStatus('', '⚠ Utilisez Chrome ou Edge pour la retranscription audio.'); document.getElementById('btn-start').disabled = true; }
+if (!SpeechRecognition) { updateStatus('', '⚠ Utilisez Chrome ou Edge pour la retranscription.'); document.getElementById('btn-start').disabled = true; }
 </script>
 </body>
 </html>

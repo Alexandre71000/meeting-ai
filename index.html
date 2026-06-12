@@ -291,7 +291,8 @@
     <button class="btn" id="btn-summary" onclick="generateSummary()" disabled>
       <i class="ti ti-sparkles"></i> Compte rendu
     </button>
-    <button class="btn btn-sm" onclick="resetAll()" style="margin-left:auto">
+    <button class="btn btn-sm" onclick="copyMeeting('${id}')"><i class="ti ti-copy"></i> Copier le CR</button>
+<button class="btn btn-sm" onclick="resendEmail('${id}')"><i class="ti ti-mail"></i> Envoyer email</button>
       <i class="ti ti-refresh"></i>
     </button>
     <span class="timer" id="timer">00:00</span>

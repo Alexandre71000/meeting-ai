@@ -640,6 +640,23 @@ function copyMeeting(id) {
   navigator.clipboard.writeText(m.summary || m.transcript).then(() => showToast('Copié ✓'));
 }
 
+function resendEmail(id) {
+  const m = meetings.find(x => x.id === id);
+  if (!m) return;
+  showToast('Envoi en cours…');
+  fetch('/api/sendemail', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: m.title,
+      client: m.client,
+      date: new Date(m.date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }),
+      participants: m.participants,
+      summary: m.summary
+    })
+  }).then(() => showToast('Email envoyé ✓')).catch(() => showToast('Erreur envoi email'));
+}  
+  
 function deleteMeeting(id) {
   if (!confirm('Supprimer cette réunion ?')) return;
   meetings = meetings.filter(m => m.id !== id);

@@ -463,7 +463,7 @@ async function generateSummary() {
     document.getElementById('action-row').style.display = 'flex';
     if (data.nextAction) document.getElementById('rec-next-action').value = data.nextAction;
     if (data.nextDate) document.getElementById('rec-next-date').value = data.nextDate;
-  } catch { box.className = 'summary-text'; box.textContent = 'Erreur de connexion.'; }
+  } catch { box.className = 'summary-text'; box.innerHTML = '<span style="color:var(--red)">Erreur de connexion.</span><br><button class="btn btn-sm" onclick="generateSummary()" style="margin-top:8px"><i class="ti ti-refresh"></i> Réessayer</button>'; }
   document.getElementById('btn-summary').disabled = false;
 }
 

@@ -1,91 +1,621 @@
-const https = require('https');
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1D9E75" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MeetingAI" />
+  <title>MeetingAI — Comptes rendus intelligents</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f0f0f;
+      --bg2: #141414;
+      --bg3: #1a1a1a;
+      --border: #222;
+      --border2: #2a2a2a;
+      --text: #d0cec8;
+      --text2: #888780;
+      --text3: #444;
+      --teal: #1D9E75;
+      --teal-dark: #0F6E56;
+      --teal-bg: #1a2e25;
+      --red: #E24B4A;
+      --amber: #EF9F27;
+      --amber-bg: #2a1f0a;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+    html { font-size: 16px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
+    .layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; overflow-y: auto; }
+    .main { margin-left: 220px; flex: 1; padding: 1.75rem 2rem; max-width: 780px; }
+    .logo { display: flex; align-items: center; gap: 10px; padding: 1.25rem; border-bottom: 1px solid var(--border); }
+    .logo-icon { width: 34px; height: 34px; background: var(--teal); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-icon i { font-size: 18px; color: white; }
+    .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
+    .nav-section { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; padding: 1.25rem 1.25rem 0.4rem; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 1.25rem; font-size: 13.5px; color: var(--text2); cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent; }
+    .nav-item:hover { background: var(--bg3); color: var(--text); }
+    .nav-item.active { background: var(--teal-bg); color: var(--teal); border-left-color: var(--teal); }
+    .nav-item i { font-size: 17px; }
+    .nav-recent { font-size: 12px; padding: 6px 1.25rem; color: var(--text3); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .nav-recent:hover { color: var(--text2); }
+    .nav-recent i { font-size: 14px; }
+    .page { display: none; }
+    .page.active { display: block; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
+    .page-title { font-size: 20px; font-weight: 500; color: var(--text); }
+    .page-sub { font-size: 13px; color: var(--text3); margin-top: 3px; }
+    .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+    .card-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+    .card-accent { border-color: var(--teal); }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+    .btn:hover { border-color: #3a3a3a; color: var(--text); }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    .btn i { font-size: 15px; }
+    .btn-primary { background: var(--teal); border-color: var(--teal); color: white; }
+    .btn-primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); color: white; }
+    .btn-danger { background: var(--red); border-color: var(--red); color: white; }
+    .btn-danger:hover { background: #a32d2d; border-color: #a32d2d; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-row.single { grid-template-columns: 1fr; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; font-weight: 500; color: var(--text2); }
+    .field input, .field select, .field textarea { padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius-md); font-size: 13px; font-family: inherit; background: #181818; color: #b8b6b0; transition: border-color 0.15s; outline: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--teal); }
+    .field input::placeholder, .field textarea::placeholder { color: #3a3a3a; }
+    .field input[type="date"] { color: #888; }
+    .field select option { background: #1a1a1a; color: #b8b6b0; }
+    .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+    .client-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
+    .client-row .field { flex: 1; margin: 0; }
+    .status-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); background: var(--bg2); border: 1px solid var(--border); font-size: 13px; color: var(--text2); margin-bottom: 1rem; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+    .dot.recording { background: var(--red); animation: pulse 1s infinite; }
+    .dot.ready { background: var(--teal); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .transcript-wrap { min-height: 120px; max-height: 220px; overflow-y: auto; font-size: 13px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+    .transcript-wrap.empty { color: var(--text3); font-style: italic; }
+    .interim { color: var(--text3); }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+    .timer { font-size: 13px; font-weight: 600; color: var(--text2); font-variant-numeric: tabular-nums; margin-left: auto; }
+    .word-badge { font-size: 12px; color: var(--text3); padding: 2px 10px; background: var(--bg3); border-radius: 20px; border: 1px solid var(--border); }
+    .summary-text { font-size: 13px; line-height: 1.8; color: #999; white-space: pre-wrap; }
+    .summary-text.loading { color: var(--text3); font-style: italic; }
+    .action-row { display: flex; gap: 8px; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .action-row i { color: var(--amber); font-size: 16px; flex-shrink: 0; }
+    .action-row input { flex: 2; min-width: 120px; padding: 8px 12px; background: #181818; border: 1px solid var(--border2); border-radius: var(--radius-md); color: #b8b6b0; font-size: 13px; font-family: inherit; outline: none; }
+    .action-row input:focus { border-color: var(--amber); }
+    .action-row input[type=date] { flex: 1; min-width: 120px; color: #888; }
+    .action-row input::placeholder { color: #3a3a3a; }
+    .error-box { background: #1a0a0a; border: 1px solid var(--red); border-radius: var(--radius-md); padding: 12px; display: flex; align-items: center; gap: 10px; }
+    .error-box span { font-size: 13px; color: #ff8080; flex: 1; }
+    .meeting-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.1s; }
+    .meeting-item:last-child { border-bottom: none; }
+    .meeting-item:hover { background: var(--bg3); margin: 0 -1.25rem; padding: 11px 1.25rem; border-radius: var(--radius-md); }
+    .meeting-icon { width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--teal-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .meeting-icon i { font-size: 17px; color: var(--teal); }
+    .meeting-info { flex: 1; min-width: 0; }
+    .meeting-title-text { font-size: 13.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meeting-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
+    .meeting-next { font-size: 11px; color: var(--amber); margin-top: 2px; font-weight: 500; }
+    .meeting-chev { color: var(--border2); font-size: 16px; }
+    .client-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+    .client-item:last-child { border-bottom: none; }
+    .client-item:hover { background: var(--bg3); margin: 0 -1.25rem; padding: 10px 1.25rem; border-radius: var(--radius-md); }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--teal-bg); border: 1px solid var(--teal-dark); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--teal); flex-shrink: 0; }
+    .client-name { font-size: 13.5px; font-weight: 500; color: var(--text); }
+    .client-sub { font-size: 12px; color: var(--text3); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: flex-end; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: var(--bg2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; border: 1px solid var(--border); border-bottom: none; padding: 1.5rem; width: 100%; max-height: 88vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s; }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); padding: 4px; }
+    .modal-close:hover { color: var(--text2); }
+    .detail-section { margin-bottom: 1.25rem; }
+    .detail-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .detail-content { font-size: 13px; line-height: 1.7; color: #999; white-space: pre-wrap; background: var(--bg3); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border); }
+    .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--teal-bg); color: var(--teal); border: 1px solid #1a3d2b; }
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); }
+    .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; }
+    .empty-state p { font-size: 13px; }
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg2); border: 1px solid var(--border2); color: var(--text); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 300; transition: transform 0.3s; white-space: nowrap; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .search-input { padding: 7px 12px; background: #181818; border: 1px solid var(--border2); border-radius: var(--radius-md); font-size: 13px; color: #b8b6b0; font-family: inherit; outline: none; width: 160px; }
+    .search-input:focus { border-color: var(--teal); }
+    .search-input::placeholder { color: #3a3a3a; }
+    @media (max-width: 700px) {
+      .sidebar { width: 60px; }
+      .logo-text, .nav-item span, .nav-section, .nav-recent { display: none; }
+      .nav-item { justify-content: center; padding: 12px; }
+      .main { margin-left: 60px; padding: 1rem; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon"><i class="ti ti-microphone"></i></div>
+      <div class="logo-text">MeetingAI</div>
+    </div>
+    <div class="nav-section">Menu</div>
+    <div class="nav-item active" onclick="showPage('record')" id="tab-record"><i class="ti ti-player-record"></i> <span>Enregistrer</span></div>
+    <div class="nav-item" onclick="showPage('meetings')" id="tab-meetings"><i class="ti ti-files"></i> <span>Réunions</span></div>
+    <div class="nav-item" onclick="showPage('clients')" id="tab-clients"><i class="ti ti-users"></i> <span>Clients</span></div>
+    <div class="nav-section">Récents</div>
+    <div id="sidebar-recent"></div>
+  </aside>
 
-module.exports = async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  <main class="main">
+    <div class="page active" id="page-record">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Nouvelle réunion</div>
+          <div class="page-sub" id="today-date"></div>
+        </div>
+        <button class="btn btn-sm" onclick="resetAll()"><i class="ti ti-refresh"></i></button>
+      </div>
+      <div class="card">
+        <div class="card-label">Informations</div>
+        <div class="client-row">
+          <div class="field">
+            <label>Client</label>
+            <select id="rec-client"><option value="">— Sélectionner —</option></select>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="openAddClientFromRecord()" style="flex-shrink:0;height:37px"><i class="ti ti-plus"></i> <span>Créer</span></button>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Objet de la réunion</label><input type="text" id="rec-title" placeholder="Ex: Présentation offre" /></div>
+          <div class="field"><label>Participants</label><input type="text" id="rec-participants" placeholder="Ex: Jean Martin" /></div>
+        </div>
+        <div class="form-row single">
+          <div class="field"><label>Type</label>
+            <select id="rec-type">
+              <option value="rdv">Rendez-vous client</option>
+              <option value="reunion">Réunion interne</option>
+              <option value="appel">Appel téléphonique</option>
+              <option value="demo">Démo / Présentation</option>
+              <option value="negociation">Négociation</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="status-bar">
+        <div class="dot" id="status-dot"></div>
+        <span id="status-text">Prêt. Renseignez les informations puis démarrez.</span>
+        <span class="word-badge" id="word-count" style="margin-left:auto">0 mot</span>
+      </div>
+      <div class="controls">
+        <button class="btn btn-primary" id="btn-start" onclick="startRecording()"><i class="ti ti-player-record"></i> Démarrer</button>
+        <button class="btn btn-danger" id="btn-stop" onclick="stopRecording()" disabled><i class="ti ti-player-stop"></i> Arrêter</button>
+        <button class="btn" id="btn-summary" onclick="generateSummary()" disabled><i class="ti ti-sparkles"></i> Compte rendu</button>
+        <span class="timer" id="timer">00:00</span>
+      </div>
+      <div class="card">
+        <div class="card-label">Retranscription en direct</div>
+        <div class="transcript-wrap empty" id="transcript-box">La retranscription apparaîtra ici en temps réel…</div>
+      </div>
+      <div class="card card-accent" id="summary-card" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="tag"><i class="ti ti-sparkles" style="font-size:11px"></i> IA</span>
+            <span class="card-label" style="margin:0">Compte rendu</span>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-sm" onclick="copyToClipboard()"><i class="ti ti-copy"></i> Copier</button>
+            <button class="btn btn-sm btn-primary" onclick="saveMeeting()"><i class="ti ti-device-floppy"></i> Sauvegarder</button>
+          </div>
+        </div>
+        <div id="summary-box"></div>
+        <div class="action-row" id="action-row" style="display:none">
+          <i class="ti ti-arrow-right"></i>
+          <input type="text" id="rec-next-action" placeholder="Prochaine action…" />
+          <input type="date" id="rec-next-date" />
+          <button class="btn btn-sm" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="showToast('Action enregistrée ✓')"><i class="ti ti-check"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-meetings">
+      <div class="topbar">
+        <div><div class="page-title">Mes réunions</div></div>
+        <input class="search-input" type="text" id="search-input" placeholder="Rechercher…" oninput="filterMeetings()" />
+      </div>
+      <div class="card"><div id="meetings-list"></div></div>
+    </div>
+
+    <div class="page" id="page-clients">
+      <div class="topbar">
+        <div><div class="page-title">Mes clients</div></div>
+        <button class="btn btn-sm btn-primary" onclick="openAddClient()"><i class="ti ti-plus"></i> Ajouter</button>
+      </div>
+      <div class="card"><div id="clients-list"></div></div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-meeting" onclick="closeModal('modal-meeting')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:680px;margin:0 auto">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-meeting-title"></span>
+      <button class="modal-close" onclick="closeModal('modal-meeting')"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="modal-meeting-content"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-client" onclick="closeModal('modal-client')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:680px;margin:0 auto">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-client-title">Nouveau client</span>
+      <button class="modal-close" onclick="closeModal('modal-client')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="form-row single"><div class="field"><label>Nom de l'entreprise *</label><input type="text" id="new-client-name" placeholder="Dupont SA" /></div></div>
+    <div class="form-row">
+      <div class="field"><label>Contact principal</label><input type="text" id="new-client-contact" placeholder="Jean Dupont" /></div>
+      <div class="field"><label>Téléphone</label><input type="text" id="new-client-phone" placeholder="06 xx xx xx xx" /></div>
+    </div>
+    <div class="form-row single"><div class="field"><label>Email</label><input type="text" id="new-client-email" placeholder="jean@dupont.fr" /></div></div>
+    <div class="form-row single"><div class="field"><label>Notes</label><textarea id="new-client-notes" placeholder="Informations importantes…"></textarea></div></div>
+    <input type="hidden" id="edit-client-id" />
+    <button class="btn btn-primary" onclick="saveClient()" style="width:100%;justify-content:center;margin-top:8px"><i class="ti ti-check"></i> Enregistrer</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let meetings = JSON.parse(localStorage.getItem('meetings') || '[]');
+let clients = JSON.parse(localStorage.getItem('clients') || '[]');
+let finalTranscript = '';
+let interimTranscript = '';
+let isRecording = false;
+let recognition = null;
+let timerInterval = null;
+let seconds = 0;
+let autoSaveInterval = null;
+
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.lang = 'fr-FR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'meetings') renderMeetings();
+  if (id === 'clients') renderClients();
+  if (id === 'record') updateClientSelect();
+}
+
+function updateClientSelect(selectValue) {
+  const sel = document.getElementById('rec-client');
+  const val = selectValue || sel.value;
+  sel.innerHTML = '<option value="">— Sélectionner —</option>' +
+    clients.map(c => `<option value="${c.name}" ${c.name === val ? 'selected' : ''}>${c.name}</option>`).join('');
+  renderSidebarRecent();
+}
+
+function renderSidebarRecent() {
+  const recent = meetings.slice(0, 4);
+  const icons = { rdv:'ti-building-store', reunion:'ti-users', appel:'ti-phone', demo:'ti-presentation', negociation:'ti-writing' };
+  document.getElementById('sidebar-recent').innerHTML = recent.map(m =>
+    `<div class="nav-recent" onclick="showPage('meetings');setTimeout(()=>openMeeting('${m.id}'),200)">
+      <i class="ti ${icons[m.type]||'ti-files'}"></i>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.client||m.title}</span>
+    </div>`
+  ).join('');
+}
+
+function startRecording() {
+  if (!recognition) { updateStatus('', 'Utilisez Chrome ou Edge.'); return; }
+  finalTranscript = ''; interimTranscript = ''; seconds = 0; isRecording = true;
+  recognition.onresult = (e) => {
+    interimTranscript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
+      else interimTranscript += e.results[i][0].transcript;
+    }
+    updateTranscript();
+  };
+  recognition.onerror = (e) => { if (e.error === 'no-speech') return; updateStatus('', 'Erreur micro : ' + e.error); stopRecording(); };
+  recognition.onend = () => { if (isRecording) recognition.start(); };
+  recognition.start();
+  timerInterval = setInterval(() => {
+    seconds++;
+    document.getElementById('timer').textContent = String(Math.floor(seconds/60)).padStart(2,'0') + ':' + String(seconds%60).padStart(2,'0');
+  }, 1000);
+  autoSaveInterval = setInterval(() => {
+    if (finalTranscript.trim()) localStorage.setItem('draft', JSON.stringify({ client: document.getElementById('rec-client').value, title: document.getElementById('rec-title').value, participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, transcript: finalTranscript, duration: seconds, date: new Date().toISOString() }));
+  }, 30000);
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('summary-card').style.display = 'none';
+  updateStatus('recording', 'Enregistrement en cours… Parlez normalement.');
+}
+
+function stopRecording() {
+  isRecording = false;
+  if (recognition) recognition.stop();
+  clearInterval(timerInterval); clearInterval(autoSaveInterval);
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-stop').disabled = true;
+  const w = countWords();
+  if (w >= 5) { updateStatus('ready', w + ' mots transcrits — Générez le compte rendu.'); document.getElementById('btn-summary').disabled = false; }
+  else updateStatus('', 'Enregistrement terminé.');
+}
+
+function updateTranscript() {
+  const box = document.getElementById('transcript-box');
+  box.classList.remove('empty');
+  box.innerHTML = finalTranscript + (interimTranscript ? '<span class="interim">' + interimTranscript + '</span>' : '');
+  box.scrollTop = box.scrollHeight;
+  const w = countWords();
+  document.getElementById('word-count').textContent = w + ' mot' + (w > 1 ? 's' : '');
+  document.getElementById('btn-summary').disabled = w < 5;
+}
+
+function countWords() { return finalTranscript.trim() ? finalTranscript.trim().split(/\s+/).length : 0; }
+
+function showError(message) {
+  const box = document.getElementById('summary-box');
+  box.innerHTML = `<div class="error-box">
+    <i class="ti ti-alert-circle" style="color:var(--red);font-size:18px;flex-shrink:0"></i>
+    <span>${message}</span>
+    <button class="btn btn-sm" onclick="generateSummary()"><i class="ti ti-refresh"></i> Réessayer</button>
+  </div>`;
+  document.getElementById('action-row').style.display = 'none';
+  document.getElementById('btn-summary').disabled = false;
+}
+
+async function generateSummary() {
+  const transcript = finalTranscript.trim();
+  
+  if (!transcript || transcript.split(/\s+/).length < 5) {
+    showError('Transcription trop courte. Parlez davantage avant de générer.');
+    document.getElementById('summary-card').style.display = 'block';
+    return;
   }
 
-  const { client, title, participants, type, date, transcript } = req.body;
+  const client = document.getElementById('rec-client').value || 'Non renseigné';
+  const title = document.getElementById('rec-title').value || 'Réunion';
+  const participants = document.getElementById('rec-participants').value || 'Non renseignés';
+  const type = document.getElementById('rec-type').options[document.getElementById('rec-type').selectedIndex].text;
+  const date = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
-  if (!transcript || transcript.trim().length < 10) {
-    return res.status(400).json({ error: 'Transcription trop courte' });
-  }
+  document.getElementById('summary-card').style.display = 'block';
+  document.getElementById('action-row').style.display = 'none';
+  const box = document.getElementById('summary-box');
+  box.className = 'summary-text loading';
+  box.textContent = 'Analyse en cours…';
+  document.getElementById('btn-summary').disabled = true;
 
-  const prompt = `Tu es un assistant pour technico-commerciaux. Analyse cette retranscription et génère un compte rendu ULTRA CONCIS en français.
-
-Contexte : Client: ${client} | Objet: ${title} | Type: ${type} | Date: ${date} | Participants: ${participants}
-
-Retranscription :
-${transcript}
-
-Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises, sans commentaires) :
-{
-  "summary": "Compte rendu en 5-8 lignes maximum. Uniquement les faits essentiels. Format bullet points avec tirets. Pas d'introduction ni de conclusion.",
-  "nextAction": "L'action prioritaire à faire en une phrase courte, ou vide si aucune",
-  "nextDate": "Date au format YYYY-MM-DD si mentionnée, sinon chaine vide"
-}`;
-
-  const body = JSON.stringify({
-    contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { maxOutputTokens: 600, temperature: 0.2 }
-  });
-
-  return new Promise((resolve) => {
-    const options = {
-      hostname: 'generativelanguage.googleapis.com',
-      path: `/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+  try {
+    const res = await fetch('/api/summary', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(body)
-      }
-    };
-
-    const req2 = https.request(options, (r) => {
-      let data = '';
-      r.on('data', (chunk) => { data += chunk; });
-      r.on('end', () => {
-        try {
-          const json = JSON.parse(data);
-          const text = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-
-          if (!text) {
-            return res.status(500).json({ error: 'Réponse vide de Gemini' });
-          }
-
-          // Extraire le JSON de la réponse
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            try {
-              const parsed = JSON.parse(jsonMatch[0]);
-              return res.status(200).json({
-                summary: (parsed.summary || '').replace(/\\n/g, '\n'),
-                nextAction: parsed.nextAction || '',
-                nextDate: parsed.nextDate || ''
-              });
-            } catch (parseErr) {
-              // Si le JSON interne est invalide, on retourne le texte brut
-              return res.status(200).json({ summary: text, nextAction: '', nextDate: '' });
-            }
-          }
-
-          // Pas de JSON trouvé, on retourne le texte brut
-          return res.status(200).json({ summary: text, nextAction: '', nextDate: '' });
-
-        } catch (e) {
-          return res.status(500).json({ error: 'Erreur de parsing : ' + e.message });
-        }
-        resolve();
-      });
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client, title, participants, type, date, transcript })
     });
+    
+    const data = await res.json();
+    
+    if (!res.ok || data.error) {
+      showError(data.error || 'Erreur serveur. Réessayez.');
+      return;
+    }
+    
+    if (!data.summary || data.summary.trim().length < 5) {
+      showError('Réponse vide reçue. Réessayez.');
+      return;
+    }
 
-    req2.on('error', (e) => {
-      res.status(500).json({ error: 'Erreur réseau : ' + e.message });
-      resolve();
-    });
+    box.className = 'summary-text';
+    box.textContent = data.summary.replace(/\\n/g, '\n');
+    document.getElementById('action-row').style.display = 'flex';
+    if (data.nextAction) document.getElementById('rec-next-action').value = data.nextAction;
+    if (data.nextDate) document.getElementById('rec-next-date').value = data.nextDate;
 
-    req2.write(body);
-    req2.end();
-    resolve();
-  });
-};
+  } catch (err) {
+    showError('Erreur de connexion. Vérifiez votre réseau.');
+  }
+  
+  document.getElementById('btn-summary').disabled = false;
+}
+
+function sendEmailAPI(meeting) {
+  return fetch('/api/sendemail', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: meeting.title, client: meeting.client, date: new Date(meeting.date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }), participants: meeting.participants, summary: meeting.summary, nextAction: meeting.nextAction || '', nextDate: meeting.nextDate || '' }) });
+}
+
+function saveMeeting() {
+  const summaryEl = document.getElementById('summary-box');
+  const summary = summaryEl.textContent || '';
+  if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
+  const clientName = document.getElementById('rec-client').value || 'Sans client';
+  const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Réunion', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value, transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
+  meetings.unshift(meeting);
+  localStorage.setItem('meetings', JSON.stringify(meetings));
+  localStorage.removeItem('draft');
+  if (clientName && clientName !== 'Sans client' && !clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())) {
+    clients.push({ id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() });
+    localStorage.setItem('clients', JSON.stringify(clients));
+  }
+  sendEmailAPI(meeting).then(() => showToast('Sauvegardé et email envoyé ✓')).catch(() => showToast('Réunion sauvegardée ✓'));
+  resetAll(); showPage('meetings');
+}
+
+function renderMeetings(filter = '') {
+  const list = document.getElementById('meetings-list');
+  const f = (filter || '').toLowerCase();
+  const filtered = meetings.filter(m => (m.title||'').toLowerCase().includes(f) || (m.client||'').toLowerCase().includes(f) || (m.summary||'').toLowerCase().includes(f));
+  if (!filtered.length) { list.innerHTML = '<div class="empty-state"><i class="ti ti-files"></i><p>' + (meetings.length === 0 ? 'Aucune réunion.<br>Commencez par enregistrer !' : 'Aucun résultat.') + '</p></div>'; return; }
+  const icons = { rdv:'ti-building-store', reunion:'ti-users', appel:'ti-phone', demo:'ti-presentation', negociation:'ti-writing' };
+  list.innerHTML = filtered.map(m => {
+    const d = new Date(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    const dur = m.duration ? Math.ceil(m.duration/60) + ' min' : '';
+    const actionStr = m.nextAction ? (m.nextDate ? `→ ${m.nextAction} · ${new Date(m.nextDate).toLocaleDateString('fr-FR', {day:'numeric',month:'short'})}` : `→ ${m.nextAction}`) : '';
+    return `<div class="meeting-item" onclick="openMeeting('${m.id}')">
+      <div class="meeting-icon"><i class="ti ${icons[m.type]||'ti-files'}"></i></div>
+      <div class="meeting-info">
+        <div class="meeting-title-text">${m.title}</div>
+        <div class="meeting-meta">${m.client} · ${d}${dur ? ' · ' + dur : ''}</div>
+        ${actionStr ? `<div class="meeting-next">${actionStr}</div>` : ''}
+      </div>
+      <i class="ti ti-chevron-right meeting-chev"></i>
+    </div>`;
+  }).join('');
+}
+
+function filterMeetings() { renderMeetings(document.getElementById('search-input').value); }
+
+function openMeeting(id) {
+  const m = meetings.find(x => x.id === id);
+  if (!m) return;
+  const dateStr = new Date(m.date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  const dur = m.duration ? Math.ceil(m.duration/60) + ' min' : 'N/A';
+  document.getElementById('modal-meeting-title').textContent = m.title;
+  document.getElementById('modal-meeting-content').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem">
+      <span class="tag"><i class="ti ti-calendar" style="font-size:11px"></i> ${dateStr}</span>
+      <span class="tag"><i class="ti ti-clock" style="font-size:11px"></i> ${dur}</span>
+      ${m.client ? `<span class="tag"><i class="ti ti-building" style="font-size:11px"></i> ${m.client}</span>` : ''}
+    </div>
+    ${m.participants ? `<div class="detail-section"><div class="detail-label">Participants</div><div class="detail-content">${m.participants}</div></div>` : ''}
+    ${m.summary ? `<div class="detail-section"><div class="detail-label">Compte rendu</div><div class="detail-content">${m.summary}</div></div>` : ''}
+    <div class="detail-section">
+      <div class="detail-label">Prochaine action</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <i class="ti ti-arrow-right" style="color:var(--amber);font-size:16px;flex-shrink:0"></i>
+        <input type="text" id="edit-action-${id}" value="${m.nextAction||''}" placeholder="Action à faire" style="flex:2;min-width:120px;padding:8px 12px;background:#181818;border:1px solid var(--border2);border-radius:var(--radius-md);color:#b8b6b0;font-size:13px;font-family:inherit;outline:none" />
+        <input type="date" id="edit-date-${id}" value="${m.nextDate||''}" style="flex:1;min-width:120px;padding:8px 12px;background:#181818;border:1px solid var(--border2);border-radius:var(--radius-md);color:#888;font-size:13px;font-family:inherit;outline:none" />
+        <button class="btn btn-sm btn-primary" onclick="saveNextAction('${id}')"><i class="ti ti-check"></i></button>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Notes post-réunion</div>
+      <textarea id="notes-${id}" style="width:100%;padding:10px;background:#181818;border:1px solid var(--border2);border-radius:var(--radius-md);color:#b8b6b0;font-size:13px;font-family:inherit;min-height:80px;resize:vertical;outline:none" placeholder="Ajoutez vos notes…">${m.notes||''}</textarea>
+      <button class="btn btn-sm" onclick="saveNotes('${id}')" style="margin-top:6px"><i class="ti ti-device-floppy"></i> Sauvegarder notes</button>
+    </div>
+    <div class="detail-section"><div class="detail-label">Retranscription</div><div class="detail-content" style="max-height:160px;overflow-y:auto">${m.transcript}</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <button class="btn btn-sm" onclick="copyMeeting('${id}')"><i class="ti ti-copy"></i> Copier le CR</button>
+      <button class="btn btn-sm btn-primary" onclick="resendEmail('${id}')"><i class="ti ti-mail"></i> Envoyer email</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteMeeting('${id}')"><i class="ti ti-trash"></i> Supprimer</button>
+    </div>`;
+  openModal('modal-meeting');
+}
+
+function saveNotes(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].notes=document.getElementById('notes-'+id).value; localStorage.setItem('meetings',JSON.stringify(meetings)); showToast('Notes sauvegardées ✓'); }
+function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; localStorage.setItem('meetings',JSON.stringify(meetings)); renderMeetings(); showToast('Action mise à jour ✓'); }
+function copyMeeting(id) { const m=meetings.find(x=>x.id===id); if(!m)return; navigator.clipboard.writeText(m.summary||m.transcript).then(()=>showToast('Copié ✓')); }
+function resendEmail(id) { const m=meetings.find(x=>x.id===id); if(!m)return; showToast('Envoi…'); sendEmailAPI(m).then(()=>showToast('Email envoyé ✓')).catch(()=>showToast('Erreur envoi')); }
+function deleteMeeting(id) { if(!confirm('Supprimer ?'))return; meetings=meetings.filter(m=>m.id!==id); localStorage.setItem('meetings',JSON.stringify(meetings)); closeModal('modal-meeting'); renderMeetings(); showToast('Supprimée'); }
+
+function renderClients() {
+  const list = document.getElementById('clients-list');
+  if (!clients.length) { list.innerHTML = '<div class="empty-state"><i class="ti ti-users"></i><p>Aucun client.<br>Cliquez sur "+ Ajouter".</p></div>'; return; }
+  list.innerHTML = clients.map(c => {
+    const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const count = meetings.filter(m=>(m.client||'').toLowerCase()===c.name.toLowerCase()).length;
+    return `<div class="client-item" onclick="openClient('${c.id}')">
+      <div class="avatar">${initials}</div>
+      <div style="flex:1"><div class="client-name">${c.name}</div><div class="client-sub">${count} réunion${count!==1?'s':''}${c.phone?' · '+c.phone:''}</div></div>
+      <i class="ti ti-chevron-right" style="color:var(--border2)"></i>
+    </div>`;
+  }).join('');
+}
+
+function openClient(id) {
+  const c=clients.find(x=>x.id===id); if(!c)return;
+  const cms=meetings.filter(m=>(m.client||'').toLowerCase()===c.name.toLowerCase());
+  const initials=c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('modal-meeting-title').textContent=c.name;
+  document.getElementById('modal-meeting-content').innerHTML=`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
+      <div class="avatar" style="width:48px;height:48px;font-size:16px">${initials}</div>
+      <div>
+        ${c.contact?`<div style="font-size:13px;color:var(--text2);margin-bottom:2px"><i class="ti ti-user" style="font-size:13px;margin-right:4px"></i>${c.contact}</div>`:''}
+        ${c.phone?`<div style="font-size:13px;color:var(--text2);margin-bottom:2px"><i class="ti ti-phone" style="font-size:13px;margin-right:4px"></i>${c.phone}</div>`:''}
+        ${c.email?`<div style="font-size:13px;color:var(--text2)"><i class="ti ti-mail" style="font-size:13px;margin-right:4px"></i>${c.email}</div>`:''}
+      </div>
+    </div>
+    ${c.notes?`<div class="detail-section"><div class="detail-label">Notes</div><div class="detail-content">${c.notes}</div></div>`:''}
+    <div class="detail-label" style="margin-bottom:8px">Toutes les réunions (${cms.length})</div>
+    ${!cms.length?'<p style="font-size:13px;color:var(--text3);margin-bottom:1rem">Aucune réunion pour ce client.</p>':
+      cms.map(m=>{const d=new Date(m.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});const a=m.nextAction?(m.nextDate?`→ ${m.nextAction} (${new Date(m.nextDate).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})})`:`→ ${m.nextAction}`):'';
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="closeModal('modal-meeting');setTimeout(()=>openMeeting('${m.id}'),200)">
+        <div style="font-size:13.5px;font-weight:500;color:var(--text)">${m.title}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">${d}</div>
+        ${a?`<div style="font-size:11px;color:var(--amber);margin-top:2px">${a}</div>`:''}
+      </div>`;}).join('')}
+    <div style="display:flex;gap:8px;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <button class="btn btn-sm" onclick="openEditClient('${id}')"><i class="ti ti-edit"></i> Modifier</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteClient('${id}')"><i class="ti ti-trash"></i> Supprimer</button>
+    </div>`;
+  openModal('modal-meeting');
+}
+
+function openAddClient() { document.getElementById('modal-client-title').textContent='Nouveau client'; ['new-client-name','new-client-contact','new-client-phone','new-client-email','new-client-notes'].forEach(i=>document.getElementById(i).value=''); document.getElementById('edit-client-id').value=''; openModal('modal-client'); }
+function openAddClientFromRecord() { openAddClient(); }
+function openEditClient(id) { const c=clients.find(x=>x.id===id); if(!c)return; closeModal('modal-meeting'); setTimeout(()=>{ document.getElementById('modal-client-title').textContent='Modifier le client'; document.getElementById('new-client-name').value=c.name; document.getElementById('new-client-contact').value=c.contact||''; document.getElementById('new-client-phone').value=c.phone||''; document.getElementById('new-client-email').value=c.email||''; document.getElementById('new-client-notes').value=c.notes||''; document.getElementById('edit-client-id').value=id; openModal('modal-client'); },200); }
+
+function saveClient() {
+  const name=document.getElementById('new-client-name').value.trim(); if(!name){showToast('Entrez un nom');return;}
+  const editId=document.getElementById('edit-client-id').value;
+  const data={name,contact:document.getElementById('new-client-contact').value,phone:document.getElementById('new-client-phone').value,email:document.getElementById('new-client-email').value,notes:document.getElementById('new-client-notes').value};
+  if(editId){const idx=clients.findIndex(c=>c.id===editId);if(idx!==-1)clients[idx]={...clients[idx],...data};}
+  else clients.push({id:Date.now().toString(),...data,createdAt:new Date().toISOString()});
+  localStorage.setItem('clients',JSON.stringify(clients));
+  closeModal('modal-client'); renderClients(); updateClientSelect(name); showToast(editId?'Client modifié ✓':'Client créé ✓');
+}
+
+function deleteClient(id) { if(!confirm('Supprimer ?'))return; clients=clients.filter(c=>c.id!==id); localStorage.setItem('clients',JSON.stringify(clients)); closeModal('modal-meeting'); renderClients(); updateClientSelect(); showToast('Client supprimé'); }
+function updateStatus(state,msg) { document.getElementById('status-dot').className='dot '+state; document.getElementById('status-text').textContent=msg; }
+
+function resetAll() {
+  stopRecording(); finalTranscript=''; seconds=0;
+  document.getElementById('timer').textContent='00:00';
+  document.getElementById('transcript-box').className='transcript-wrap empty';
+  document.getElementById('transcript-box').textContent='La retranscription apparaîtra ici en temps réel…';
+  document.getElementById('word-count').textContent='0 mot';
+  document.getElementById('summary-card').style.display='none';
+  document.getElementById('btn-summary').disabled=true;
+  document.getElementById('rec-client').value='';
+  document.getElementById('rec-title').value='';
+  document.getElementById('rec-participants').value='';
+  updateStatus('','Prêt. Renseignez les informations puis démarrez.');
+}
+
+function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('summary-box').textContent).then(()=>showToast('Copié ✓')); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+updateClientSelect();
+renderSidebarRecent();
+const draft=localStorage.getItem('draft');
+if(draft){try{const d=JSON.parse(draft);if(d.transcript&&d.transcript.length>10){finalTranscript=d.transcript;document.getElementById('rec-title').value=d.title||'';document.getElementById('rec-participants').value=d.participants||'';updateTranscript();updateStatus('ready','Brouillon restauré.');}}catch(e){}}
+if(!SpeechRecognition){updateStatus('','⚠ Utilisez Chrome ou Edge.');document.getElementById('btn-start').disabled=true;}
+</script>
+</body>
+</html>

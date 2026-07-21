@@ -8,37 +8,24 @@ module.exports = async function handler(req, res) {
   if (!transcript || transcript.trim().length < 10) {
     return res.status(400).json({ error: 'Transcription trop courte' });
   }
- const prompt = `Tu es un assistant expert en analyse de réunions commerciales pour technico-commerciaux. 
-Analyse cette retranscription et génère un compte rendu commercial complet et structuré en français.
 
-Contexte :
-Client : ${client}
-Objet : ${title}
-Date : ${date}
-Participants : ${participants}
+  const prompt = `Tu es un assistant pour technico-commerciaux. Analyse cette retranscription et génère un compte rendu ULTRA CONCIS en français.
+
+Contexte : Client: ${client} | Objet: ${title} | Type: ${type} | Date: ${date} | Participants: ${participants}
 
 Retranscription :
 ${transcript}
 
-Génère un compte rendu avec TOUTES les sections pertinentes parmi :
+Réponds UNIQUEMENT avec un JSON valide (sans markdown) :
+{
+  "summary": "Compte rendu en 5-8 lignes maximum. Uniquement les faits essentiels : ce qui a été dit, décidé, et les points bloquants. Pas d'introduction, pas de conclusion, pas de blabla. Format : bullet points courts avec tirets.",
+  "nextAction": "L'action prioritaire à faire (une phrase courte ex: Envoyer devis) ou vide",
+  "nextDate": "Date au format YYYY-MM-DD si mentionnée sinon vide"
+}`;
 
-1. RÉSUMÉ EXÉCUTIF (2-3 phrases synthétisant l'essentiel)
-2. CONTEXTE & PARTICIPANTS (qui était présent, rôles, contexte)
-3. BESOINS & PROBLÉMATIQUES DU CLIENT (ce que le client cherche, ses contraintes)
-4. PRODUITS & SERVICES DISCUTÉS (ce qui a été présenté, démontré)
-5. CONDITIONS COMMERCIALES (prix, remises négociées, conditions de paiement, délais)
-6. OBJECTIONS SOULEVÉES (freins, hésitations du client et réponses apportées)
-7. CONCURRENCE (concurrents mentionnés, comparaisons)
-8. NIVEAU DE MATURITÉ (où en est le client dans sa décision, probabilité de signature)
-9. DÉCISIONS PRISES (ce qui a été acté durant la réunion)
-10. ACTIONS À SUIVRE (qui fait quoi et quand, côté client et côté commercial)
-11. PROCHAINES ÉTAPES (prochain RDV, délai de réponse, relance prévue)
-12. POINTS D'ATTENTION (risques, points sensibles à surveiller)
-
-N'inclus que les sections pour lesquelles tu as des informations. Sois précis, professionnel et orienté action. Texte brut sans markdown.`;
   const body = JSON.stringify({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
-    generationConfig: { thinkingConfig: { thinkingLevel: "HIGH" } }
+    generationConfig: { maxOutputTokens: 600, temperature: 0.2 }
   });
 
   return new Promise((resolve) => {
@@ -48,26 +35,34 @@ N'inclus que les sections pour lesquelles tu as des informations. Sois précis, 
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
     };
+
     const req2 = https.request(options, (r) => {
       let data = '';
       r.on('data', (chunk) => { data += chunk; });
       r.on('end', () => {
         try {
-          const json = JSON.parse(data);
-          const items = Array.isArray(json) ? json : [json];
-          let summary = '';
-          for (const item of items) {
-            summary += item?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const items = JSON.parse(data);
+          const arr = Array.isArray(items) ? items : [items];
+          let text = '';
+          for (const item of arr) {
+            text += item?.candidates?.[0]?.content?.parts?.[0]?.text || '';
           }
-          res.status(200).json({ summary });
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            return res.status(200).json({ summary: parsed.summary || text, nextAction: parsed.nextAction || '', nextDate: parsed.nextDate || '' });
+          }
+          return res.status(200).json({ summary: text, nextAction: '', nextDate: '' });
         } catch (e) {
-          res.status(500).json({ error: 'Parse error: ' + data.substring(0, 200) });
+          return res.status(500).json({ error: 'Erreur de génération, veuillez réessayer.' });
         }
         resolve();
       });
     });
-    req2.on('error', (e) => { res.status(500).json({ error: e.message }); resolve(); });
+
+    req2.on('error', (e) => { res.status(500).json({ error: 'Erreur réseau : ' + e.message }); resolve(); });
     req2.write(body);
     req2.end();
+    resolve();
   });
 };

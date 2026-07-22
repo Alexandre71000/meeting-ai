@@ -155,6 +155,7 @@
     <div class="nav-section">Menu</div>
     <div class="nav-item active" onclick="showPage('record')" id="tab-record"><i class="ti ti-player-record"></i> <span>Enregistrer</span></div>
     <div class="nav-item" onclick="showPage('meetings')" id="tab-meetings"><i class="ti ti-files"></i> <span>Réunions</span></div>
+    <div class="nav-item" onclick="showPage('actions')" id="tab-actions"><i class="ti ti-list-check"></i> <span>Actions</span></div>
     <div class="nav-item" onclick="showPage('clients')" id="tab-clients"><i class="ti ti-users"></i> <span>Clients</span></div>
     <div class="nav-section">Récents</div>
     <div id="sidebar-recent"></div>
@@ -207,7 +208,7 @@
       </div>
       <div class="card">
         <div class="card-label">Retranscription en direct</div>
-        <div class="transcript-wrap empty" id="transcript-box">La retranscription apparaîtra ici en temps réel…</div>
+        <div class="transcript-wrap empty" id="transcript-box" contenteditable="true" oninput="onTranscriptEdit()">La retranscription apparaîtra ici en temps réel…</div>
       </div>
       <div class="card card-accent" id="summary-card" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -217,10 +218,11 @@
           </div>
           <div style="display:flex;gap:6px">
             <button class="btn btn-sm" onclick="copyToClipboard()"><i class="ti ti-copy"></i> Copier</button>
+            <button class="btn btn-sm" onclick="sendCurrentEmail()"><i class="ti ti-mail"></i> Envoyer par email</button>
             <button class="btn btn-sm btn-primary" onclick="saveMeeting()"><i class="ti ti-device-floppy"></i> Sauvegarder</button>
           </div>
         </div>
-        <div id="summary-box"></div>
+        <div id="summary-box" contenteditable="true"></div>
         <div class="action-row" id="action-row" style="display:none">
           <i class="ti ti-arrow-right"></i>
           <input type="text" id="rec-next-action" placeholder="Prochaine action…" />
@@ -236,6 +238,13 @@
         <input class="search-input" type="text" id="search-input" placeholder="Rechercher…" oninput="filterMeetings()" />
       </div>
       <div class="card"><div id="meetings-list"></div></div>
+    </div>
+
+    <div class="page" id="page-actions">
+      <div class="topbar">
+        <div><div class="page-title">Actions à faire</div></div>
+      </div>
+      <div class="card"><div id="actions-list"></div></div>
     </div>
 
     <div class="page" id="page-clients">
@@ -311,6 +320,7 @@ function showPage(id) {
   document.getElementById('page-' + id).classList.add('active');
   document.getElementById('tab-' + id).classList.add('active');
   if (id === 'meetings') renderMeetings();
+  if (id === 'actions') renderActions();
   if (id === 'clients') renderClients();
   if (id === 'record') updateClientSelect();
 }
@@ -338,7 +348,7 @@ function startRecording() {
   const canWhisper = navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder;
   if (!recognition && !canWhisper) { updateStatus('', 'Utilisez Chrome ou Edge.'); return; }
 
-  finalTranscript = ''; interimTranscript = ''; seconds = 0; isRecording = true;
+  interimTranscript = ''; isRecording = true;
   transcriptionMode = recognition ? 'webspeech' : 'whisper';
 
   if (transcriptionMode === 'webspeech') {
@@ -434,9 +444,17 @@ function stopWhisperRecording() {
 
 function updateTranscript() {
   const box = document.getElementById('transcript-box');
+  if (document.activeElement === box) return;
   box.classList.remove('empty');
   box.innerHTML = finalTranscript + (interimTranscript ? '<span class="interim">' + interimTranscript + '</span>' : '');
   box.scrollTop = box.scrollHeight;
+  const w = countWords();
+  document.getElementById('word-count').textContent = w + ' mot' + (w > 1 ? 's' : '');
+  document.getElementById('btn-summary').disabled = w < 5;
+}
+
+function onTranscriptEdit() {
+  finalTranscript = document.getElementById('transcript-box').innerText;
   const w = countWords();
   document.getElementById('word-count').textContent = w + ' mot' + (w > 1 ? 's' : '');
   document.getElementById('btn-summary').disabled = w < 5;
@@ -513,6 +531,14 @@ function sendEmailAPI(meeting) {
   return fetch('/api/sendemail', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: meeting.title, client: meeting.client, date: new Date(meeting.date).toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' }), participants: meeting.participants, summary: meeting.summary, nextAction: meeting.nextAction || '', nextDate: meeting.nextDate || '' }) });
 }
 
+function sendCurrentEmail() {
+  const summary = document.getElementById('summary-box').textContent || '';
+  if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
+  const meeting = { title: document.getElementById('rec-title').value || 'Réunion', client: document.getElementById('rec-client').value || 'Non renseigné', date: new Date().toISOString(), participants: document.getElementById('rec-participants').value, summary, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value };
+  showToast('Envoi…');
+  sendEmailAPI(meeting).then(() => showToast('Email envoyé ✓')).catch(() => showToast('Erreur envoi'));
+}
+
 function saveMeeting() {
   const summaryEl = document.getElementById('summary-box');
   const summary = summaryEl.textContent || '';
@@ -526,7 +552,7 @@ function saveMeeting() {
     clients.push({ id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() });
     localStorage.setItem('clients', JSON.stringify(clients));
   }
-  sendEmailAPI(meeting).then(() => showToast('Sauvegardé et email envoyé ✓')).catch(() => showToast('Réunion sauvegardée ✓'));
+  showToast('Réunion sauvegardée ✓');
   resetAll(); showPage('meetings');
 }
 
@@ -553,6 +579,30 @@ function renderMeetings(filter = '') {
 }
 
 function filterMeetings() { renderMeetings(document.getElementById('search-input').value); }
+
+function renderActions() {
+  const list = document.getElementById('actions-list');
+  const withAction = meetings.filter(m => m.nextAction);
+  if (!withAction.length) { list.innerHTML = '<div class="empty-state"><i class="ti ti-list-check"></i><p>Aucune action en attente.</p></div>'; return; }
+  const sorted = withAction.slice().sort((a, b) => {
+    if (!a.nextDate && !b.nextDate) return 0;
+    if (!a.nextDate) return 1;
+    if (!b.nextDate) return -1;
+    return new Date(a.nextDate) - new Date(b.nextDate);
+  });
+  const icons = { rdv:'ti-building-store', reunion:'ti-users', appel:'ti-phone', demo:'ti-presentation', negociation:'ti-writing' };
+  list.innerHTML = sorted.map(m => {
+    const dateStr = m.nextDate ? new Date(m.nextDate).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) : 'Sans échéance';
+    return `<div class="meeting-item" onclick="openMeeting('${m.id}')">
+      <div class="meeting-icon"><i class="ti ${icons[m.type]||'ti-arrow-right'}"></i></div>
+      <div class="meeting-info">
+        <div class="meeting-title-text">${m.nextAction}</div>
+        <div class="meeting-meta">${m.client} · ${dateStr}</div>
+      </div>
+      <i class="ti ti-chevron-right meeting-chev"></i>
+    </div>`;
+  }).join('');
+}
 
 function openMeeting(id) {
   const m = meetings.find(x => x.id === id);

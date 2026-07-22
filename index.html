@@ -78,7 +78,8 @@
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; transition: background .15s, color .15s; }
     .layout { display: flex; min-height: 100vh; }
     .sidebar { width: 224px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; overflow-y: auto; }
-    .main { margin-left: 224px; flex: 1; padding: 2rem 2.25rem; max-width: 780px; }
+    .main { margin-left: 224px; flex: 1; padding: 2rem 2.5rem; display: flex; justify-content: center; }
+    .page { width: 100%; max-width: 1040px; }
     .logo { display: flex; align-items: center; gap: 10px; padding: 1.25rem 1.25rem 1rem; }
     .logo-icon { width: 30px; height: 30px; background: var(--teal); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .logo-icon i { font-size: 15px; color: #fff; }
@@ -242,6 +243,21 @@
       .theme-toggle { justify-content: center; padding: 10px; }
       .main { margin-left: 60px; padding: 1rem; }
       .form-row { grid-template-columns: 1fr; }
+      .hero-strip { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .hero-action { align-self: stretch; justify-content: center; }
+      .client-row { flex-wrap: wrap; }
+      .client-row .field { min-width: 100%; }
+      .topbar { flex-wrap: wrap; gap: 10px; }
+      .controls { width: 100%; }
+      .timer { margin-left: 0; }
+      .toolbar .controls .btn span, .toolbar .controls .btn { font-size: 12.5px; }
+      .theme-options { flex-direction: column; }
+      .settings-tabs { gap: 14px; }
+    }
+    @media (max-width: 480px) {
+      .main { padding: 0.85rem 0.85rem 6rem; }
+      .card, .hero-strip, .toolbar { padding: 1rem; }
+      .modal { padding: 1.15rem; }
     }
   </style>
 </head>

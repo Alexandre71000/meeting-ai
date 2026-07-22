@@ -288,6 +288,11 @@ let recognition = null;
 let timerInterval = null;
 let seconds = 0;
 let autoSaveInterval = null;
+let transcriptionMode = 'webspeech';
+let mediaRecorder = null;
+let micStream = null;
+let whisperChunkTimeout = null;
+const WHISPER_CHUNK_MS = 15000;
 
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
@@ -329,19 +334,28 @@ function renderSidebarRecent() {
 }
 
 function startRecording() {
-  if (!recognition) { updateStatus('', 'Utilisez Chrome ou Edge.'); return; }
+  const canWhisper = navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder;
+  if (!recognition && !canWhisper) { updateStatus('', 'Utilisez Chrome ou Edge.'); return; }
+
   finalTranscript = ''; interimTranscript = ''; seconds = 0; isRecording = true;
-  recognition.onresult = (e) => {
-    interimTranscript = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
-      else interimTranscript += e.results[i][0].transcript;
-    }
-    updateTranscript();
-  };
-  recognition.onerror = (e) => { if (e.error === 'no-speech') return; updateStatus('', 'Erreur micro : ' + e.error); stopRecording(); };
-  recognition.onend = () => { if (isRecording) recognition.start(); };
-  recognition.start();
+  transcriptionMode = recognition ? 'webspeech' : 'whisper';
+
+  if (transcriptionMode === 'webspeech') {
+    recognition.onresult = (e) => {
+      interimTranscript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript + ' ';
+        else interimTranscript += e.results[i][0].transcript;
+      }
+      updateTranscript();
+    };
+    recognition.onerror = (e) => { if (e.error === 'no-speech') return; updateStatus('', 'Erreur micro : ' + e.error); stopRecording(); };
+    recognition.onend = () => { if (isRecording) recognition.start(); };
+    recognition.start();
+  } else {
+    startWhisperRecording();
+  }
+
   timerInterval = setInterval(() => {
     seconds++;
     document.getElementById('timer').textContent = String(Math.floor(seconds/60)).padStart(2,'0') + ':' + String(seconds%60).padStart(2,'0');
@@ -357,13 +371,64 @@ function startRecording() {
 
 function stopRecording() {
   isRecording = false;
-  if (recognition) recognition.stop();
+  if (transcriptionMode === 'webspeech') { if (recognition) recognition.stop(); }
+  else stopWhisperRecording();
   clearInterval(timerInterval); clearInterval(autoSaveInterval);
   document.getElementById('btn-start').disabled = false;
   document.getElementById('btn-stop').disabled = true;
   const w = countWords();
   if (w >= 5) { updateStatus('ready', w + ' mots transcrits — Générez le compte rendu.'); document.getElementById('btn-summary').disabled = false; }
   else updateStatus('', 'Enregistrement terminé.');
+}
+
+function pickAudioMimeType() {
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+  return candidates.find(t => window.MediaRecorder.isTypeSupported && window.MediaRecorder.isTypeSupported(t)) || '';
+}
+
+async function startWhisperRecording() {
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    stopRecording();
+    updateStatus('', 'Accès micro refusé.');
+    return;
+  }
+  updateStatus('recording', 'Enregistrement en cours (transcription serveur)… Parlez normalement.');
+  startWhisperSegment();
+}
+
+function startWhisperSegment() {
+  if (!isRecording || !micStream) return;
+  const mimeType = pickAudioMimeType();
+  mediaRecorder = mimeType ? new MediaRecorder(micStream, { mimeType }) : new MediaRecorder(micStream);
+  const chunks = [];
+  mediaRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+  mediaRecorder.onstop = async () => {
+    if (chunks.length) await uploadWhisperSegment(new Blob(chunks, { type: mediaRecorder.mimeType }));
+    if (isRecording) startWhisperSegment();
+  };
+  mediaRecorder.start();
+  whisperChunkTimeout = setTimeout(() => { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); }, WHISPER_CHUNK_MS);
+}
+
+async function uploadWhisperSegment(blob) {
+  try {
+    const res = await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': blob.type || 'audio/webm' }, body: blob });
+    const data = await res.json();
+    if (res.ok && data.text && data.text.trim()) {
+      finalTranscript += data.text.trim() + ' ';
+      updateTranscript();
+    }
+  } catch (e) {
+    console.error('Segment de transcription échoué :', e);
+  }
+}
+
+function stopWhisperRecording() {
+  clearTimeout(whisperChunkTimeout);
+  if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+  if (micStream) { micStream.getTracks().forEach(t => t.stop()); micStream = null; }
 }
 
 function updateTranscript() {
@@ -615,7 +680,11 @@ updateClientSelect();
 renderSidebarRecent();
 const draft=localStorage.getItem('draft');
 if(draft){try{const d=JSON.parse(draft);if(d.transcript&&d.transcript.length>10){finalTranscript=d.transcript;document.getElementById('rec-title').value=d.title||'';document.getElementById('rec-participants').value=d.participants||'';updateTranscript();updateStatus('ready','Brouillon restauré.');}}catch(e){}}
-if(!SpeechRecognition){updateStatus('','⚠ Utilisez Chrome ou Edge.');document.getElementById('btn-start').disabled=true;}
+if(!SpeechRecognition){
+  const canWhisper=navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder;
+  if(canWhisper) updateStatus('','Prêt (transcription serveur — compatible iPhone).');
+  else { updateStatus('','⚠ Utilisez Chrome ou Edge.'); document.getElementById('btn-start').disabled=true; }
+}
 </script>
 </body>
 </html>

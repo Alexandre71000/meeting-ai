@@ -2,6 +2,7 @@
   "version": 2,
   "functions": {
     "api/summary.js": { "maxDuration": 60 },
-    "api/sendemail.js": { "maxDuration": 30 }
+    "api/sendemail.js": { "maxDuration": 30 },
+    "api/transcribe.js": { "maxDuration": 30 }
   }
 }

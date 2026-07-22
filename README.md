@@ -15,12 +15,12 @@ Application web de retranscription et comptes rendus automatiques pour technico-
 5. Cliquez **"Create repository"**
 6. Uploadez tous les fichiers de ce dossier via **"uploading an existing file"**
 
-### Étape 2 — Obtenir la clé API Anthropic
+### Étape 2 — Obtenir la clé API Groq
 
-1. Allez sur [console.anthropic.com](https://console.anthropic.com)
-2. Créez un compte (vous recevez 5$ de crédit gratuit)
-3. Allez dans **"API Keys"** → **"Create Key"**
-4. Copiez la clé (commence par `sk-ant-...`)
+1. Allez sur [console.groq.com](https://console.groq.com)
+2. Créez un compte gratuit
+3. Allez dans **"API Keys"** → **"Create API Key"**
+4. Copiez la clé (commence par `gsk_...`)
 5. Gardez-la de côté, vous en aurez besoin à l'étape 4
 
 ### Étape 3 — Déployer sur Vercel
@@ -35,8 +35,8 @@ Application web de retranscription et comptes rendus automatiques pour technico-
 
 1. Dans Vercel, allez dans votre projet → **"Settings"** → **"Environment Variables"**
 2. Ajoutez une variable :
-   - **Name** : `ANTHROPIC_API_KEY`
-   - **Value** : votre clé API (`sk-ant-...`)
+   - **Name** : `GROQ_API_KEY`
+   - **Value** : votre clé API (`gsk_...`)
 3. Cliquez **"Save"**
 4. Allez dans **"Deployments"** → cliquez sur les **3 points** → **"Redeploy"**
 
@@ -65,7 +65,7 @@ L'app s'installe comme une vraie application, sans passer par l'App Store.
 ## Fonctionnalités
 
 - 🎙 Retranscription audio en temps réel (français)
-- 🤖 Génération automatique de compte rendu via Claude
+- 🤖 Génération automatique de compte rendu via Groq (Llama 3.3 70B)
 - 💾 Sauvegarde locale de toutes les réunions
 - 👥 Gestion des clients avec historique
 - 🔍 Recherche dans les réunions passées
@@ -82,7 +82,7 @@ L'app s'installe comme une vraie application, sans passer par l'App Store.
 | GitHub | Gratuit |
 | Vercel | Gratuit |
 | Retranscription (Web Speech API) | Gratuit |
-| Comptes rendus (API Anthropic) | ~0,002€ par réunion |
+| Comptes rendus (API Groq) | Gratuit (quota généreux) |
 
 Pour 50 réunions/mois → **moins de 0,10€/mois**
 
@@ -100,6 +100,6 @@ La retranscription audio fonctionne sur :
 ## Support
 
 En cas de problème, vérifiez :
-1. Que la variable `ANTHROPIC_API_KEY` est bien configurée dans Vercel
+1. Que la variable `GROQ_API_KEY` est bien configurée dans Vercel
 2. Que vous utilisez Chrome ou Edge
 3. Que vous avez autorisé l'accès au microphone dans le navigateur

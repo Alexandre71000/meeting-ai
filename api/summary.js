@@ -9,44 +9,53 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Transcription trop courte' });
   }
 
-  const prompt = `Tu es un assistant pour technico-commerciaux. Analyse cette retranscription et génère un compte rendu ULTRA CONCIS en français.
+  const prompt = `Tu es un assistant pour technico-commerciaux. Analyse cette retranscription de réunion et génère un compte rendu ULTRA CONCIS et orienté action, en français.
 
 Contexte : Client: ${client} | Objet: ${title} | Type: ${type} | Date: ${date} | Participants: ${participants}
 
 Retranscription :
 ${transcript}
 
-Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises) :
+Consignes strictes :
+- Le compte rendu doit tenir en 5 à 8 bullet points maximum (un tiret "-" par ligne).
+- Va droit au but : besoins client, points bloquants, décisions, chiffres/prix évoqués, prochaines étapes commerciales.
+- Pas de blabla, pas de reformulation inutile, pas de phrases d'introduction ou de conclusion.
+- Priorise l'information actionnable pour un commercial (relance, devis, RDV, objection à traiter).
+
+Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code) :
 {
-  "summary": "Compte rendu en 5-8 lignes max. Faits essentiels uniquement. Format bullet points avec tirets.",
-  "nextAction": "Action prioritaire en une phrase courte, ou chaine vide",
-  "nextDate": "Date au format YYYY-MM-DD si mentionnée, sinon chaine vide"
+  "summary": "Compte rendu en 5-8 bullet points max, un tiret par ligne, séparés par \\n.",
+  "nextAction": "Action commerciale prioritaire en une phrase courte, ou chaine vide",
+  "nextDate": "Date au format YYYY-MM-DD si une prochaine échéance est mentionnée, sinon chaine vide"
 }`;
 
   try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 600, temperature: 0.2 }
-        })
-      }
-    );
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 600,
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
+      })
+    });
 
-    const data = await geminiRes.json();
+    const data = await groqRes.json();
 
-    if (!geminiRes.ok) {
-      console.error('Gemini error:', JSON.stringify(data));
-      return res.status(500).json({ error: data?.error?.message || 'Erreur Gemini' });
+    if (!groqRes.ok) {
+      console.error('Groq error:', JSON.stringify(data));
+      return res.status(500).json({ error: data?.error?.message || 'Erreur Groq' });
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = data?.choices?.[0]?.message?.content || '';
 
     if (!text) {
-      return res.status(500).json({ error: 'Réponse vide de Gemini' });
+      return res.status(500).json({ error: 'Réponse vide de Groq' });
     }
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);

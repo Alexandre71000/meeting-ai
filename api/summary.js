@@ -3,11 +3,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { client, title, participants, type, date, transcript } = req.body;
+  const { client, title, participants, type, date, transcript, instructions } = req.body;
 
   if (!transcript || transcript.trim().split(/\s+/).length < 5) {
     return res.status(400).json({ error: 'Transcription trop courte' });
   }
+
+  const consignes = (instructions && instructions.trim()) ? instructions.trim() : `- Le compte rendu doit tenir en 5 à 8 bullet points maximum (un tiret "-" par ligne).
+- Va droit au but : besoins client, points bloquants, décisions, chiffres/prix évoqués, prochaines étapes commerciales.
+- Pas de blabla, pas de reformulation inutile, pas de phrases d'introduction ou de conclusion.
+- Priorise l'information actionnable pour un commercial (relance, devis, RDV, objection à traiter).`;
 
   const prompt = `Tu es un assistant pour technico-commerciaux. Analyse cette retranscription de réunion et génère un compte rendu ULTRA CONCIS et orienté action, en français.
 
@@ -16,15 +21,12 @@ Contexte : Client: ${client} | Objet: ${title} | Type: ${type} | Date: ${date} |
 Retranscription :
 ${transcript}
 
-Consignes strictes :
-- Le compte rendu doit tenir en 5 à 8 bullet points maximum (un tiret "-" par ligne).
-- Va droit au but : besoins client, points bloquants, décisions, chiffres/prix évoqués, prochaines étapes commerciales.
-- Pas de blabla, pas de reformulation inutile, pas de phrases d'introduction ou de conclusion.
-- Priorise l'information actionnable pour un commercial (relance, devis, RDV, objection à traiter).
+Consignes :
+${consignes}
 
 Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code) :
 {
-  "summary": "Compte rendu en 5-8 bullet points max, un tiret par ligne, séparés par \\n.",
+  "summary": "Compte rendu selon les consignes ci-dessus, un tiret par ligne, séparés par \\n.",
   "nextAction": "Action commerciale prioritaire en une phrase courte, ou chaine vide",
   "nextDate": "Date au format YYYY-MM-DD si une prochaine échéance est mentionnée, sinon chaine vide"
 }`;

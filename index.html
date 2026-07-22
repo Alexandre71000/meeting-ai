@@ -2,8 +2,17 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    (function(){
+      try {
+        var pref = localStorage.getItem('themePreference') || 'system';
+        var isDark = pref === 'dark' || (pref === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      } catch(e) {}
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#1D9E75" />
+  <meta name="theme-color" content="#F4F6F8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MeetingAI" />
@@ -11,135 +20,226 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0f0f0f;
-      --bg2: #141414;
-      --bg3: #1a1a1a;
-      --border: #222;
-      --border2: #2a2a2a;
-      --text: #d0cec8;
-      --text2: #888780;
-      --text3: #444;
-      --teal: #1D9E75;
-      --teal-dark: #0F6E56;
-      --teal-bg: #1a2e25;
-      --red: #E24B4A;
-      --amber: #EF9F27;
-      --amber-bg: #2a1f0a;
-      --radius-sm: 6px;
-      --radius-md: 8px;
+      color-scheme: light;
+      --bg: #F4F6F8;
+      --bg2: #FFFFFF;
+      --bg3: #EDEFF2;
+      --border: #E2E6EB;
+      --border2: #CBD3DC;
+      --text: #182231;
+      --text2: #5C6779;
+      --text3: #9AA4B2;
+      --teal: #2E5C8A;
+      --teal-dark: #1E4269;
+      --teal-bg: #DCE8F2;
+      --red: #C1443E;
+      --amber: #B9770E;
+      --amber-bg: #F7E7CC;
+      --accent-border: #B9D2E8;
+      --danger-bg: #FBEDEA;
+      --danger-border: #E7C1B9;
+      --danger-text: #8F3A2E;
+      --radius-sm: 7px;
+      --radius-md: 9px;
       --radius-lg: 12px;
+      --shadow-sm: 0 1px 2px rgba(24,34,49,0.05);
+      --shadow-md: 0 6px 20px rgba(24,34,49,0.10), 0 1px 3px rgba(24,34,49,0.06);
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #262624;
+      --bg2: #30302E;
+      --bg3: #3A3937;
+      --border: #43413C;
+      --border2: #52504A;
+      --text: #F5F4EE;
+      --text2: #B3B0A8;
+      --text3: #82807A;
+      --teal: #D97757;
+      --teal-dark: #BF5F3F;
+      --teal-bg: #3D2B22;
+      --red: #E2574C;
+      --amber: #E0A83E;
+      --amber-bg: #3D2E14;
+      --accent-border: #5C4030;
+      --danger-bg: #3A211D;
+      --danger-border: #5C2E29;
+      --danger-text: #F0A79C;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
+      --shadow-md: 0 8px 24px rgba(0,0,0,0.35);
     }
     html { font-size: 16px; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; transition: background .15s, color .15s; }
     .layout { display: flex; min-height: 100vh; }
-    .sidebar { width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; overflow-y: auto; }
-    .main { margin-left: 220px; flex: 1; padding: 1.75rem 2rem; max-width: 780px; }
-    .logo { display: flex; align-items: center; gap: 10px; padding: 1.25rem; border-bottom: 1px solid var(--border); }
-    .logo-icon { width: 34px; height: 34px; background: var(--teal); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .logo-icon i { font-size: 18px; color: white; }
-    .logo-text { font-size: 15px; font-weight: 600; color: var(--text); }
-    .nav-section { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; padding: 1.25rem 1.25rem 0.4rem; }
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 1.25rem; font-size: 13.5px; color: var(--text2); cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent; }
+    .sidebar { width: 224px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; overflow-y: auto; }
+    .main { margin-left: 224px; flex: 1; padding: 2rem 2.25rem; max-width: 780px; }
+    .logo { display: flex; align-items: center; gap: 10px; padding: 1.25rem 1.25rem 1rem; }
+    .logo-icon { width: 30px; height: 30px; background: var(--teal); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .logo-icon i { font-size: 15px; color: #fff; }
+    .logo-text { font-size: 15.5px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+    .nav-section { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; padding: 1rem 1.25rem 0.4rem; }
+    .nav-item { display: flex; align-items: center; gap: 10px; margin: 1px 10px; padding: 8px 12px; font-size: 13.5px; font-weight: 600; color: var(--text2); cursor: pointer; transition: all 0.15s; border-radius: var(--radius-md); }
     .nav-item:hover { background: var(--bg3); color: var(--text); }
-    .nav-item.active { background: var(--teal-bg); color: var(--teal); border-left-color: var(--teal); }
-    .nav-item i { font-size: 17px; }
-    .nav-recent { font-size: 12px; padding: 6px 1.25rem; color: var(--text3); display: flex; align-items: center; gap: 8px; cursor: pointer; }
-    .nav-recent:hover { color: var(--text2); }
+    .nav-item.active { background: var(--teal-bg); color: var(--teal-dark); }
+    .nav-item i { font-size: 16px; }
+    .nav-recent { font-size: 12.5px; margin: 1px 10px; padding: 6px 12px; color: var(--text3); display: flex; align-items: center; gap: 8px; cursor: pointer; border-radius: var(--radius-md); }
+    .nav-recent:hover { color: var(--text); background: var(--bg3); }
     .nav-recent i { font-size: 14px; }
+    .theme-toggle { display: flex; align-items: center; gap: 9px; margin: 10px 10px 14px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 12.5px; font-weight: 600; color: var(--text2); cursor: pointer; background: var(--bg); }
+    .theme-toggle:hover { border-color: var(--border2); color: var(--text); }
+    .theme-toggle i { font-size: 15px; }
+    .settings-tabs { display: flex; gap: 20px; margin-bottom: 1.1rem; border-bottom: 1px solid var(--border); }
+    .settings-tab { padding: 8px 2px; font-size: 13px; font-weight: 600; color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .settings-tab:hover { color: var(--text2); }
+    .settings-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+    .settings-panel { display: none; }
+    .settings-panel.active { display: block; }
+    .settings-section { margin-bottom: 1.25rem; }
+    .theme-options { display: flex; gap: 8px; }
+    .theme-option { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 16px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg2); color: var(--text2); font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+    .theme-option:hover { border-color: var(--border2); }
+    .theme-option i { font-size: 20px; }
+    .theme-option.active { border-color: var(--teal); background: var(--teal-bg); color: var(--teal-dark); }
+    .cat-row { border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 8px; overflow: hidden; }
+    .cat-row-head { display: flex; align-items: center; gap: 9px; padding: 11px 14px; cursor: pointer; background: var(--bg2); }
+    .cat-row-head:hover { background: var(--bg3); }
+    .cat-name { font-size: 13.5px; font-weight: 600; color: var(--text); flex: 1; }
+    .cat-badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
+    .cat-badge.custom { background: var(--teal-bg); color: var(--teal-dark); }
+    .cat-badge.default { background: var(--bg3); color: var(--text3); }
+    .cat-row-head > i { color: var(--text3); font-size: 15px; flex-shrink: 0; }
+    .cat-editor { padding: 14px; border-top: 1px solid var(--border); background: var(--bg); }
+    .cat-editor .field { margin-bottom: 10px; }
+    .cat-editor .hint { font-weight: 400; color: var(--text3); font-size: 11.5px; text-transform: none; letter-spacing: 0; }
+    .test-preview-box { margin-top: 10px; padding: 12px; background: var(--bg3); border-radius: var(--radius-md); font-size: 13px; line-height: 1.7; color: var(--text2); }
+    .chat-launcher { position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--teal); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-md); z-index: 150; font-size: 22px; transition: transform 0.15s; border: none; }
+    .chat-launcher:hover { transform: scale(1.06); }
+    .chat-panel { position: fixed; bottom: 88px; right: 24px; width: 360px; max-width: calc(100vw - 32px); height: 500px; max-height: calc(100vh - 140px); background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); display: flex; flex-direction: column; z-index: 150; opacity: 0; pointer-events: none; transform: translateY(12px); transition: all 0.18s; overflow: hidden; }
+    .chat-panel.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+    .chat-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .chat-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .chat-sub { font-size: 11.5px; color: var(--text3); margin-top: 2px; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .chat-empty { text-align: center; color: var(--text3); font-size: 12.5px; padding: 10px 4px; }
+    .chat-suggestion { display: block; width: 100%; text-align: left; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px 10px; font-size: 12px; color: var(--text2); margin-top: 8px; cursor: pointer; font-family: inherit; }
+    .chat-suggestion:hover { border-color: var(--border2); color: var(--text); }
+    .chat-msg { max-width: 85%; padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
+    .chat-msg.user { align-self: flex-end; background: var(--teal); color: #fff; border-bottom-right-radius: 3px; }
+    .chat-msg.assistant { align-self: flex-start; background: var(--bg3); color: var(--text); border-bottom-left-radius: 3px; }
+    .chat-msg.loading { font-style: italic; color: var(--text3); }
+    .chat-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); flex-shrink: 0; }
+    .chat-input-row input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; font-family: inherit; background: var(--bg2); color: var(--text); outline: none; }
+    .chat-input-row input:focus { border-color: var(--teal); }
+    @media (max-width: 480px) {
+      .chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 78px; }
+      .chat-launcher { right: 16px; bottom: 16px; }
+    }
     .page { display: none; }
     .page.active { display: block; }
     .topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.5rem; }
-    .page-title { font-size: 20px; font-weight: 500; color: var(--text); }
-    .page-sub { font-size: 13px; color: var(--text3); margin-top: 3px; }
+    .hero-strip { display: none; align-items: center; justify-content: space-between; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-bottom: 1rem; gap: 12px; }
+    .hero-strip.show { display: flex; }
+    .hero-client { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero-meta { font-size: 12.5px; color: var(--text2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hero-action { display: flex; align-items: center; gap: 7px; background: var(--amber-bg); color: var(--amber); border-radius: var(--radius-md); padding: 8px 13px; font-size: 12.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+    .summary-line { position: relative; padding-left: 14px; margin-bottom: 5px; }
+    .summary-line::before { content: ''; position: absolute; left: 0; top: 8px; width: 5px; height: 5px; border-radius: 50%; background: var(--teal); }
+    .page-title { font-size: 21px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); }
+    .page-sub { font-size: 13px; color: var(--text3); margin-top: 4px; }
     .card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
-    .card-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
-    .card-accent { border-color: var(--teal); }
-    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; font-family: inherit; }
-    .btn:hover { border-color: #3a3a3a; color: var(--text); }
+    .card-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
+    .card-accent { border-color: var(--accent-border); }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg2); color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+    .btn:hover { border-color: var(--border2); color: var(--text); }
     .btn:active { transform: scale(0.98); }
-    .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
     .btn i { font-size: 15px; }
-    .btn-primary { background: var(--teal); border-color: var(--teal); color: white; }
-    .btn-primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); color: white; }
-    .btn-danger { background: var(--red); border-color: var(--red); color: white; }
-    .btn-danger:hover { background: #a32d2d; border-color: #a32d2d; }
+    .btn-primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .btn-primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); color: #fff; }
+    .btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+    .btn-danger:hover { filter: brightness(0.88); }
     .btn-sm { padding: 6px 12px; font-size: 12px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .form-row.single { grid-template-columns: 1fr; }
     .field { display: flex; flex-direction: column; gap: 5px; }
-    .field label { font-size: 12px; font-weight: 500; color: var(--text2); }
-    .field input, .field select, .field textarea { padding: 9px 12px; border: 1px solid var(--border2); border-radius: var(--radius-md); font-size: 13px; font-family: inherit; background: #181818; color: #b8b6b0; transition: border-color 0.15s; outline: none; }
+    .field label { font-size: 12px; font-weight: 600; color: var(--text2); }
+    .field input, .field select, .field textarea { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; font-family: inherit; background: var(--bg2); color: var(--text); transition: border-color 0.15s; outline: none; }
     .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--teal); }
-    .field input::placeholder, .field textarea::placeholder { color: #3a3a3a; }
-    .field input[type="date"] { color: #888; }
-    .field select option { background: #1a1a1a; color: #b8b6b0; }
+    .field input::placeholder, .field textarea::placeholder { color: var(--text3); }
+    .field input[type="date"] { color: var(--text2); }
+    .field select option { background: var(--bg2); color: var(--text); }
     .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
     .client-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 12px; }
     .client-row .field { flex: 1; margin: 0; }
-    .status-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); background: var(--bg2); border: 1px solid var(--border); font-size: 13px; color: var(--text2); margin-bottom: 1rem; }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
+    .toolbar { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg2); padding: 10px 14px; margin-bottom: 1rem; }
+    .status-bar { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text2); padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px solid var(--border); }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); flex-shrink: 0; }
     .dot.recording { background: var(--red); animation: pulse 1s infinite; }
     .dot.ready { background: var(--teal); }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .transcript-wrap { min-height: 120px; max-height: 220px; overflow-y: auto; font-size: 13px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+    .transcript-wrap { min-height: 120px; max-height: 220px; overflow-y: auto; font-size: 13.5px; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
     .transcript-wrap.empty { color: var(--text3); font-style: italic; }
     .interim { color: var(--text3); }
-    .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
-    .timer { font-size: 13px; font-weight: 600; color: var(--text2); font-variant-numeric: tabular-nums; margin-left: auto; }
-    .word-badge { font-size: 12px; color: var(--text3); padding: 2px 10px; background: var(--bg3); border-radius: 20px; border: 1px solid var(--border); }
-    .summary-text { font-size: 13px; line-height: 1.8; color: #999; white-space: pre-wrap; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .timer { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; margin-left: auto; }
+    .word-badge { font-size: 12px; color: var(--text3); padding: 2px 10px; background: var(--bg3); border-radius: 20px; }
+    .summary-text { font-size: 13.5px; line-height: 1.8; color: var(--text2); white-space: pre-wrap; }
     .summary-text.loading { color: var(--text3); font-style: italic; }
-    .action-row { display: flex; gap: 8px; align-items: center; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); flex-wrap: wrap; }
+    .action-row { display: flex; gap: 8px; align-items: center; margin-top: 1rem; padding: 10px 12px; background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius-md); flex-wrap: wrap; }
     .action-row i { color: var(--amber); font-size: 16px; flex-shrink: 0; }
-    .action-row input { flex: 2; min-width: 120px; padding: 8px 12px; background: #181818; border: 1px solid var(--border2); border-radius: var(--radius-md); color: #b8b6b0; font-size: 13px; font-family: inherit; outline: none; }
+    .action-row input { flex: 2; min-width: 120px; padding: 8px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
     .action-row input:focus { border-color: var(--amber); }
-    .action-row input[type=date] { flex: 1; min-width: 120px; color: #888; }
-    .action-row input::placeholder { color: #3a3a3a; }
-    .error-box { background: #1a0a0a; border: 1px solid var(--red); border-radius: var(--radius-md); padding: 12px; display: flex; align-items: center; gap: 10px; }
-    .error-box span { font-size: 13px; color: #ff8080; flex: 1; }
+    .action-row input[type=date] { flex: 1; min-width: 120px; color: var(--text2); }
+    .action-row input::placeholder { color: var(--text3); }
+    .error-box { background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 12px; display: flex; align-items: center; gap: 10px; }
+    .error-box span { font-size: 13px; color: var(--danger-text); flex: 1; }
     .meeting-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.1s; }
     .meeting-item:last-child { border-bottom: none; }
     .meeting-item:hover { background: var(--bg3); margin: 0 -1.25rem; padding: 11px 1.25rem; border-radius: var(--radius-md); }
     .meeting-icon { width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--teal-bg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .meeting-icon i { font-size: 17px; color: var(--teal); }
     .meeting-info { flex: 1; min-width: 0; }
-    .meeting-title-text { font-size: 13.5px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meeting-title-text { font-size: 13.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .meeting-meta { font-size: 12px; color: var(--text3); margin-top: 2px; }
-    .meeting-next { font-size: 11px; color: var(--amber); margin-top: 2px; font-weight: 500; }
+    .meeting-next { font-size: 11px; color: var(--amber); margin-top: 2px; font-weight: 600; }
     .meeting-chev { color: var(--border2); font-size: 16px; }
     .client-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
     .client-item:last-child { border-bottom: none; }
     .client-item:hover { background: var(--bg3); margin: 0 -1.25rem; padding: 10px 1.25rem; border-radius: var(--radius-md); }
-    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--teal-bg); border: 1px solid var(--teal-dark); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--teal); flex-shrink: 0; }
-    .client-name { font-size: 13.5px; font-weight: 500; color: var(--text); }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--teal-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--teal); flex-shrink: 0; }
+    .client-name { font-size: 13.5px; font-weight: 600; color: var(--text); }
     .client-sub { font-size: 12px; color: var(--text3); }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: flex-end; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: flex-end; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
     .modal-overlay.open { opacity: 1; pointer-events: all; }
-    .modal { background: var(--bg2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; border: 1px solid var(--border); border-bottom: none; padding: 1.5rem; width: 100%; max-height: 88vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s; }
+    .modal { background: var(--bg2); border-radius: var(--radius-lg) var(--radius-lg) 0 0; box-shadow: var(--shadow-md); padding: 1.5rem; width: 100%; max-height: 88vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.25s; }
     .modal-overlay.open .modal { transform: translateY(0); }
     .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-    .modal-title { font-size: 15px; font-weight: 600; color: var(--text); }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
     .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text3); padding: 4px; }
     .modal-close:hover { color: var(--text2); }
     .detail-section { margin-bottom: 1.25rem; }
-    .detail-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
-    .detail-content { font-size: 13px; line-height: 1.7; color: #999; white-space: pre-wrap; background: var(--bg3); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border); }
-    .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--teal-bg); color: var(--teal); border: 1px solid #1a3d2b; }
+    .detail-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+    .detail-content { font-size: 13px; line-height: 1.7; color: var(--text2); white-space: pre-wrap; background: var(--bg3); padding: 12px; border-radius: var(--radius-md); }
+    .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: var(--teal-bg); color: var(--teal-dark); }
     .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text3); }
     .empty-state i { font-size: 40px; margin-bottom: 12px; display: block; }
     .empty-state p { font-size: 13px; }
-    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--bg2); border: 1px solid var(--border2); color: var(--text); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 300; transition: transform 0.3s; white-space: nowrap; }
+    .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--text); border: 1px solid var(--text); color: var(--bg2); padding: 10px 20px; border-radius: 20px; font-size: 13px; z-index: 300; transition: transform 0.3s; white-space: nowrap; box-shadow: var(--shadow-md); }
     .toast.show { transform: translateX(-50%) translateY(0); }
-    .search-input { padding: 7px 12px; background: #181818; border: 1px solid var(--border2); border-radius: var(--radius-md); font-size: 13px; color: #b8b6b0; font-family: inherit; outline: none; width: 160px; }
+    .search-input { padding: 7px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; color: var(--text); font-family: inherit; outline: none; width: 160px; }
     .search-input:focus { border-color: var(--teal); }
-    .search-input::placeholder { color: #3a3a3a; }
+    .search-input::placeholder { color: var(--text3); }
     @media (max-width: 700px) {
       .sidebar { width: 60px; }
-      .logo-text, .nav-item span, .nav-section, .nav-recent { display: none; }
+      .logo-text, .nav-item span, .nav-section, .nav-recent, .theme-toggle span { display: none; }
       .nav-item { justify-content: center; padding: 12px; }
+      .theme-toggle { justify-content: center; padding: 10px; }
       .main { margin-left: 60px; padding: 1rem; }
       .form-row { grid-template-columns: 1fr; }
     }
@@ -152,59 +252,64 @@
       <div class="logo-icon"><i class="ti ti-microphone"></i></div>
       <div class="logo-text">MeetingAI</div>
     </div>
-    <div class="nav-section">Menu</div>
     <div class="nav-item active" onclick="showPage('record')" id="tab-record"><i class="ti ti-player-record"></i> <span>Enregistrer</span></div>
-    <div class="nav-item" onclick="showPage('meetings')" id="tab-meetings"><i class="ti ti-files"></i> <span>Réunions</span></div>
+    <div class="nav-item" onclick="showPage('meetings')" id="tab-meetings"><i class="ti ti-files"></i> <span>Échanges</span></div>
     <div class="nav-item" onclick="showPage('actions')" id="tab-actions"><i class="ti ti-list-check"></i> <span>Actions</span></div>
     <div class="nav-item" onclick="showPage('clients')" id="tab-clients"><i class="ti ti-users"></i> <span>Clients</span></div>
     <div class="nav-section">Récents</div>
     <div id="sidebar-recent"></div>
+    <div class="theme-toggle" onclick="openSettings()" id="settings-btn" title="Paramètres" style="margin-top:auto">
+      <i class="ti ti-settings"></i> <span>Paramètres</span>
+    </div>
   </aside>
 
   <main class="main">
     <div class="page active" id="page-record">
       <div class="topbar">
         <div>
-          <div class="page-title">Nouvelle réunion</div>
+          <div class="page-title">Nouvel échange</div>
           <div class="page-sub" id="today-date"></div>
         </div>
         <button class="btn btn-sm" onclick="resetAll()"><i class="ti ti-refresh"></i></button>
+      </div>
+      <div class="hero-strip" id="hero-strip">
+        <div>
+          <div class="hero-client" id="hero-client"></div>
+          <div class="hero-meta" id="hero-meta"></div>
+        </div>
+        <div class="hero-action" id="hero-action" style="display:none"><i class="ti ti-arrow-right"></i> <span id="hero-action-text"></span></div>
       </div>
       <div class="card">
         <div class="card-label">Informations</div>
         <div class="client-row">
           <div class="field">
             <label>Client</label>
-            <select id="rec-client"><option value="">— Sélectionner —</option></select>
+            <select id="rec-client" onchange="updateHero()"><option value="">— Sélectionner —</option></select>
           </div>
           <button class="btn btn-sm btn-primary" onclick="openAddClientFromRecord()" style="flex-shrink:0;height:37px"><i class="ti ti-plus"></i> <span>Créer</span></button>
         </div>
         <div class="form-row">
-          <div class="field"><label>Objet de la réunion</label><input type="text" id="rec-title" placeholder="Ex: Présentation offre" /></div>
-          <div class="field"><label>Participants</label><input type="text" id="rec-participants" placeholder="Ex: Jean Martin" /></div>
+          <div class="field"><label>Objet de l'échange</label><input type="text" id="rec-title" placeholder="Ex: Présentation offre" oninput="updateHero()" /></div>
+          <div class="field"><label>Participants</label><input type="text" id="rec-participants" placeholder="Ex: Jean Martin" oninput="updateHero()" /></div>
         </div>
         <div class="form-row single">
           <div class="field"><label>Type</label>
-            <select id="rec-type">
-              <option value="rdv">Rendez-vous client</option>
-              <option value="reunion">Réunion interne</option>
-              <option value="appel">Appel téléphonique</option>
-              <option value="demo">Démo / Présentation</option>
-              <option value="negociation">Négociation</option>
-            </select>
+            <select id="rec-type" onchange="updateHero()"></select>
           </div>
         </div>
       </div>
-      <div class="status-bar">
-        <div class="dot" id="status-dot"></div>
-        <span id="status-text">Prêt. Renseignez les informations puis démarrez.</span>
-        <span class="word-badge" id="word-count" style="margin-left:auto">0 mot</span>
-      </div>
-      <div class="controls">
-        <button class="btn btn-primary" id="btn-start" onclick="startRecording()"><i class="ti ti-player-record"></i> Démarrer</button>
-        <button class="btn btn-danger" id="btn-stop" onclick="stopRecording()" disabled><i class="ti ti-player-stop"></i> Arrêter</button>
-        <button class="btn" id="btn-summary" onclick="generateSummary()" disabled><i class="ti ti-sparkles"></i> Compte rendu</button>
-        <span class="timer" id="timer">00:00</span>
+      <div class="toolbar">
+        <div class="status-bar">
+          <div class="dot" id="status-dot"></div>
+          <span id="status-text">Prêt. Renseignez les informations puis démarrez.</span>
+          <span class="word-badge" id="word-count" style="margin-left:auto">0 mot</span>
+        </div>
+        <div class="controls">
+          <button class="btn btn-primary" id="btn-start" onclick="startRecording()"><i class="ti ti-player-record"></i> Démarrer</button>
+          <button class="btn btn-danger" id="btn-stop" onclick="stopRecording()" disabled><i class="ti ti-player-stop"></i> Arrêter</button>
+          <button class="btn" id="btn-summary" onclick="generateSummary()" disabled><i class="ti ti-sparkles"></i> Compte rendu</button>
+          <span class="timer" id="timer">00:00</span>
+        </div>
       </div>
       <div class="card">
         <div class="card-label">Retranscription en direct</div>
@@ -225,16 +330,16 @@
         <div id="summary-box" contenteditable="true"></div>
         <div class="action-row" id="action-row" style="display:none">
           <i class="ti ti-arrow-right"></i>
-          <input type="text" id="rec-next-action" placeholder="Prochaine action…" />
-          <input type="date" id="rec-next-date" />
-          <button class="btn btn-sm" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="showToast('Action enregistrée ✓')"><i class="ti ti-check"></i></button>
+          <input type="text" id="rec-next-action" placeholder="Prochaine action…" oninput="updateHero()" />
+          <input type="date" id="rec-next-date" oninput="updateHero()" />
+          <button class="btn btn-sm" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="updateHero();showToast('Action enregistrée ✓')"><i class="ti ti-check"></i></button>
         </div>
       </div>
     </div>
 
     <div class="page" id="page-meetings">
       <div class="topbar">
-        <div><div class="page-title">Mes réunions</div></div>
+        <div><div class="page-title">Mes échanges</div></div>
         <input class="search-input" type="text" id="search-input" placeholder="Rechercher…" oninput="filterMeetings()" />
       </div>
       <div class="card"><div id="meetings-list"></div></div>
@@ -285,11 +390,71 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-settings" onclick="closeModal('modal-settings')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:720px;margin:0 auto">
+    <div class="modal-header">
+      <span class="modal-title">Paramètres</span>
+      <button class="modal-close" onclick="closeModal('modal-settings')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="settings-tabs">
+      <div class="settings-tab active" onclick="showSettingsTab('appearance', this)">Apparence</div>
+      <div class="settings-tab" onclick="showSettingsTab('prompts', this)">Catégories &amp; prompts</div>
+    </div>
+    <div class="settings-panel active" id="settings-appearance">
+      <div class="settings-section">
+        <div class="card-label">Apparence</div>
+        <div class="theme-options">
+          <button class="theme-option" data-value="light" onclick="applyThemePreference('light')"><i class="ti ti-sun"></i> Clair</button>
+          <button class="theme-option" data-value="dark" onclick="applyThemePreference('dark')"><i class="ti ti-moon"></i> Sombre</button>
+          <button class="theme-option" data-value="system" onclick="applyThemePreference('system')"><i class="ti ti-device-desktop"></i> Système</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-panel" id="settings-prompts">
+      <div class="settings-section">
+        <div class="card-label">Catégories d'échange</div>
+        <div id="category-list"></div>
+        <button class="btn btn-sm btn-primary" onclick="addCategory()" style="margin-top:4px"><i class="ti ti-plus"></i> Nouvelle catégorie</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
+
+<button class="chat-launcher" id="chat-launcher" onclick="toggleChat()" title="Assistant"><i class="ti ti-chevron-up" id="chat-launcher-icon"></i></button>
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-header">
+    <div>
+      <div class="chat-title">Assistant</div>
+      <div class="chat-sub">Interroge tes échanges enregistrés</div>
+    </div>
+    <button class="modal-close" onclick="toggleChat()"><i class="ti ti-x"></i></button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Pose ta question…" onkeydown="if(event.key==='Enter')sendChatMessage()" />
+    <button class="btn btn-sm btn-primary" onclick="sendChatMessage()"><i class="ti ti-send"></i></button>
+  </div>
+</div>
 
 <script>
 let meetings = JSON.parse(localStorage.getItem('meetings') || '[]');
 let clients = JSON.parse(localStorage.getItem('clients') || '[]');
+const DEFAULT_CATEGORIES = [
+  { id: 'rdv', label: 'Rendez-vous client', prompt: '', fixed: true },
+  { id: 'reunion', label: 'Réunion interne', prompt: '', fixed: true },
+  { id: 'appel', label: 'Appel téléphonique', prompt: '', fixed: true }
+];
+let categories = JSON.parse(localStorage.getItem('categories') || 'null') || DEFAULT_CATEGORIES.map(c => ({...c}));
+const DEFAULT_PROMPT_TEXT = `- Le compte rendu doit tenir en 5 à 8 bullet points maximum (un tiret "-" par ligne).
+- Va droit au but : besoins client, points bloquants, décisions, chiffres/prix évoqués, prochaines étapes commerciales.
+- Pas de blabla, pas de reformulation inutile, pas de phrases d'introduction ou de conclusion.
+- Priorise l'information actionnable pour un commercial (relance, devis, RDV, objection à traiter).`;
+const SAMPLE_TRANSCRIPT = "Bonjour, merci de nous recevoir. On voulait faire un point sur l'avancement du dossier. Concernant le budget, vous étiez plutôt sur une fourchette de dix à douze mille euros, c'est toujours d'actualité ? Oui tout à fait, et on aimerait avancer assez vite, disons avant la fin du mois. Parfait, je vous envoie une proposition détaillée d'ici deux jours et on recale un point la semaine prochaine.";
+let expandedCategoryId = null;
+let chatMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+const CHAT_CONTEXT_MAX_CHARS = 60000;
 let finalTranscript = '';
 let interimTranscript = '';
 let isRecording = false;
@@ -322,7 +487,13 @@ function showPage(id) {
   if (id === 'meetings') renderMeetings();
   if (id === 'actions') renderActions();
   if (id === 'clients') renderClients();
-  if (id === 'record') updateClientSelect();
+  if (id === 'record') { updateClientSelect(); updateTypeSelect(); }
+}
+
+function updateTypeSelect(selectValue) {
+  const sel = document.getElementById('rec-type');
+  const val = selectValue !== undefined ? selectValue : sel.value;
+  sel.innerHTML = categories.map(c => `<option value="${c.id}" ${c.id === val ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('');
 }
 
 function updateClientSelect(selectValue) {
@@ -483,9 +654,12 @@ async function generateSummary() {
   }
 
   const client = document.getElementById('rec-client').value || 'Non renseigné';
-  const title = document.getElementById('rec-title').value || 'Réunion';
+  const title = document.getElementById('rec-title').value || 'Échange';
   const participants = document.getElementById('rec-participants').value || 'Non renseignés';
-  const type = document.getElementById('rec-type').options[document.getElementById('rec-type').selectedIndex].text;
+  const typeSelEl = document.getElementById('rec-type');
+  const type = typeSelEl.options[typeSelEl.selectedIndex].text;
+  const currentCat = categories.find(c => c.id === typeSelEl.value);
+  const instructions = currentCat && currentCat.prompt && currentCat.prompt.trim() ? currentCat.prompt.trim() : '';
   const date = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
   document.getElementById('summary-card').style.display = 'block';
@@ -499,7 +673,7 @@ async function generateSummary() {
     const res = await fetch('/api/summary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client, title, participants, type, date, transcript })
+      body: JSON.stringify({ client, title, participants, type, date, transcript, instructions })
     });
     
     const data = await res.json();
@@ -515,10 +689,11 @@ async function generateSummary() {
     }
 
     box.className = 'summary-text';
-    box.textContent = data.summary.replace(/\\n/g, '\n');
+    box.innerHTML = formatSummaryHtml(data.summary.replace(/\\n/g, '\n'));
     document.getElementById('action-row').style.display = 'flex';
     if (data.nextAction) document.getElementById('rec-next-action').value = data.nextAction;
     if (data.nextDate) document.getElementById('rec-next-date').value = data.nextDate;
+    updateHero();
 
   } catch (err) {
     showError('Erreur de connexion. Vérifiez votre réseau.');
@@ -532,19 +707,19 @@ function sendEmailAPI(meeting) {
 }
 
 function sendCurrentEmail() {
-  const summary = document.getElementById('summary-box').textContent || '';
+  const summary = document.getElementById('summary-box').innerText || '';
   if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
-  const meeting = { title: document.getElementById('rec-title').value || 'Réunion', client: document.getElementById('rec-client').value || 'Non renseigné', date: new Date().toISOString(), participants: document.getElementById('rec-participants').value, summary, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value };
+  const meeting = { title: document.getElementById('rec-title').value || 'Échange', client: document.getElementById('rec-client').value || 'Non renseigné', date: new Date().toISOString(), participants: document.getElementById('rec-participants').value, summary, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value };
   showToast('Envoi…');
   sendEmailAPI(meeting).then(() => showToast('Email envoyé ✓')).catch(() => showToast('Erreur envoi'));
 }
 
 function saveMeeting() {
   const summaryEl = document.getElementById('summary-box');
-  const summary = summaryEl.textContent || '';
+  const summary = summaryEl.innerText || '';
   if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
   const clientName = document.getElementById('rec-client').value || 'Sans client';
-  const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Réunion', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value, transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
+  const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Échange', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value, transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
   meetings.unshift(meeting);
   localStorage.setItem('meetings', JSON.stringify(meetings));
   localStorage.removeItem('draft');
@@ -552,7 +727,7 @@ function saveMeeting() {
     clients.push({ id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() });
     localStorage.setItem('clients', JSON.stringify(clients));
   }
-  showToast('Réunion sauvegardée ✓');
+  showToast('Échange sauvegardé ✓');
   resetAll(); showPage('meetings');
 }
 
@@ -560,7 +735,7 @@ function renderMeetings(filter = '') {
   const list = document.getElementById('meetings-list');
   const f = (filter || '').toLowerCase();
   const filtered = meetings.filter(m => (m.title||'').toLowerCase().includes(f) || (m.client||'').toLowerCase().includes(f) || (m.summary||'').toLowerCase().includes(f));
-  if (!filtered.length) { list.innerHTML = '<div class="empty-state"><i class="ti ti-files"></i><p>' + (meetings.length === 0 ? 'Aucune réunion.<br>Commencez par enregistrer !' : 'Aucun résultat.') + '</p></div>'; return; }
+  if (!filtered.length) { list.innerHTML = '<div class="empty-state"><i class="ti ti-files"></i><p>' + (meetings.length === 0 ? 'Aucun échange.<br>Commencez par enregistrer !' : 'Aucun résultat.') + '</p></div>'; return; }
   const icons = { rdv:'ti-building-store', reunion:'ti-users', appel:'ti-phone', demo:'ti-presentation', negociation:'ti-writing' };
   list.innerHTML = filtered.map(m => {
     const d = new Date(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
@@ -617,19 +792,19 @@ function openMeeting(id) {
       ${m.client ? `<span class="tag"><i class="ti ti-building" style="font-size:11px"></i> ${m.client}</span>` : ''}
     </div>
     ${m.participants ? `<div class="detail-section"><div class="detail-label">Participants</div><div class="detail-content">${m.participants}</div></div>` : ''}
-    ${m.summary ? `<div class="detail-section"><div class="detail-label">Compte rendu</div><div class="detail-content">${m.summary}</div></div>` : ''}
+    ${m.summary ? `<div class="detail-section"><div class="detail-label">Compte rendu</div><div class="detail-content">${formatSummaryHtml(m.summary)}</div></div>` : ''}
     <div class="detail-section">
       <div class="detail-label">Prochaine action</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <i class="ti ti-arrow-right" style="color:var(--amber);font-size:16px;flex-shrink:0"></i>
-        <input type="text" id="edit-action-${id}" value="${m.nextAction||''}" placeholder="Action à faire" style="flex:2;min-width:120px;padding:8px 12px;background:#181818;border:1px solid var(--border2);border-radius:var(--radius-md);color:#b8b6b0;font-size:13px;font-family:inherit;outline:none" />
-        <input type="date" id="edit-date-${id}" value="${m.nextDate||''}" style="flex:1;min-width:120px;padding:8px 12px;background:#181818;border:1px solid var(--border2);border-radius:var(--radius-md);color:#888;font-size:13px;font-family:inherit;outline:none" />
+        <input type="text" id="edit-action-${id}" value="${m.nextAction||''}" placeholder="Action à faire" style="flex:2;min-width:120px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:13px;font-family:inherit;outline:none" />
+        <input type="date" id="edit-date-${id}" value="${m.nextDate||''}" style="flex:1;min-width:120px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text2);font-size:13px;font-family:inherit;outline:none" />
         <button class="btn btn-sm btn-primary" onclick="saveNextAction('${id}')"><i class="ti ti-check"></i></button>
       </div>
     </div>
     <div class="detail-section">
-      <div class="detail-label">Notes post-réunion</div>
-      <textarea id="notes-${id}" style="width:100%;padding:10px;background:#181818;border:1px solid var(--border2);border-radius:var(--radius-md);color:#b8b6b0;font-size:13px;font-family:inherit;min-height:80px;resize:vertical;outline:none" placeholder="Ajoutez vos notes…">${m.notes||''}</textarea>
+      <div class="detail-label">Notes post-échange</div>
+      <textarea id="notes-${id}" style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:13px;font-family:inherit;min-height:80px;resize:vertical;outline:none" placeholder="Ajoutez vos notes…">${m.notes||''}</textarea>
       <button class="btn btn-sm" onclick="saveNotes('${id}')" style="margin-top:6px"><i class="ti ti-device-floppy"></i> Sauvegarder notes</button>
     </div>
     <div class="detail-section"><div class="detail-label">Retranscription</div><div class="detail-content" style="max-height:160px;overflow-y:auto">${m.transcript}</div></div>
@@ -655,7 +830,7 @@ function renderClients() {
     const count = meetings.filter(m=>(m.client||'').toLowerCase()===c.name.toLowerCase()).length;
     return `<div class="client-item" onclick="openClient('${c.id}')">
       <div class="avatar">${initials}</div>
-      <div style="flex:1"><div class="client-name">${c.name}</div><div class="client-sub">${count} réunion${count!==1?'s':''}${c.phone?' · '+c.phone:''}</div></div>
+      <div style="flex:1"><div class="client-name">${c.name}</div><div class="client-sub">${count} échange${count!==1?'s':''}${c.phone?' · '+c.phone:''}</div></div>
       <i class="ti ti-chevron-right" style="color:var(--border2)"></i>
     </div>`;
   }).join('');
@@ -676,8 +851,8 @@ function openClient(id) {
       </div>
     </div>
     ${c.notes?`<div class="detail-section"><div class="detail-label">Notes</div><div class="detail-content">${c.notes}</div></div>`:''}
-    <div class="detail-label" style="margin-bottom:8px">Toutes les réunions (${cms.length})</div>
-    ${!cms.length?'<p style="font-size:13px;color:var(--text3);margin-bottom:1rem">Aucune réunion pour ce client.</p>':
+    <div class="detail-label" style="margin-bottom:8px">Tous les échanges (${cms.length})</div>
+    ${!cms.length?'<p style="font-size:13px;color:var(--text3);margin-bottom:1rem">Aucun échange pour ce client.</p>':
       cms.map(m=>{const d=new Date(m.date).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});const a=m.nextAction?(m.nextDate?`→ ${m.nextAction} (${new Date(m.nextDate).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})})`:`→ ${m.nextAction}`):'';
       return `<div style="padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="closeModal('modal-meeting');setTimeout(()=>openMeeting('${m.id}'),200)">
         <div style="font-size:13.5px;font-weight:500;color:var(--text)">${m.title}</div>
@@ -708,6 +883,260 @@ function saveClient() {
 function deleteClient(id) { if(!confirm('Supprimer ?'))return; clients=clients.filter(c=>c.id!==id); localStorage.setItem('clients',JSON.stringify(clients)); closeModal('modal-meeting'); renderClients(); updateClientSelect(); showToast('Client supprimé'); }
 function updateStatus(state,msg) { document.getElementById('status-dot').className='dot '+state; document.getElementById('status-text').textContent=msg; }
 
+function updateHero() {
+  const client = document.getElementById('rec-client').value;
+  const title = document.getElementById('rec-title').value;
+  const participants = document.getElementById('rec-participants').value;
+  const typeSel = document.getElementById('rec-type');
+  const type = typeSel.options[typeSel.selectedIndex].text;
+  const strip = document.getElementById('hero-strip');
+  if (!client && !title) { strip.classList.remove('show'); return; }
+  document.getElementById('hero-client').textContent = client || title;
+  const metaParts = [];
+  if (client && title) metaParts.push(title);
+  if (participants) metaParts.push(participants);
+  metaParts.push(type);
+  document.getElementById('hero-meta').textContent = metaParts.join(' · ');
+  const nextAction = document.getElementById('rec-next-action').value;
+  const nextDate = document.getElementById('rec-next-date').value;
+  const heroAction = document.getElementById('hero-action');
+  if (nextAction) {
+    document.getElementById('hero-action-text').textContent = nextAction + (nextDate ? ' · ' + new Date(nextDate).toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) : '');
+    heroAction.style.display = 'flex';
+  } else {
+    heroAction.style.display = 'none';
+  }
+  strip.classList.add('show');
+}
+
+function escapeHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatSummaryHtml(text) {
+  return (text||'').split('\n').filter(l => l.trim()).map(l => `<div class="summary-line">${escapeHtml(l.replace(/^[-•]\s*/, ''))}</div>`).join('');
+}
+
+function resolveTheme(pref) {
+  return (pref === 'dark' || (pref === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) ? 'dark' : 'light';
+}
+function applyThemePreference(pref) {
+  localStorage.setItem('themePreference', pref);
+  const resolved = resolveTheme(pref);
+  document.documentElement.setAttribute('data-theme', resolved);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', resolved === 'dark' ? '#262624' : '#F4F6F8');
+  document.querySelectorAll('.theme-option').forEach(b => b.classList.toggle('active', b.dataset.value === pref));
+}
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+    if ((localStorage.getItem('themePreference') || 'system') === 'system') applyThemePreference('system');
+  });
+}
+
+function buildEntryBlock(m, includeTranscript) {
+  const d = new Date(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+  let block = `--- Échange : ${m.title || 'Sans titre'} | Client : ${m.client || '—'} | Date : ${d} | Participants : ${m.participants || '—'}
+Compte rendu : ${m.summary || '—'}
+Prochaine action : ${m.nextAction ? m.nextAction + (m.nextDate ? ' (' + m.nextDate + ')' : '') : '—'}`;
+  if (includeTranscript && m.transcript) block += `\nRetranscription : ${m.transcript}`;
+  return block;
+}
+
+function buildAskContext() {
+  let entries = meetings.map(m => buildEntryBlock(m, true));
+  let text = entries.join('\n\n');
+  if (text.length > CHAT_CONTEXT_MAX_CHARS) {
+    entries = meetings.map(m => buildEntryBlock(m, false));
+    text = entries.join('\n\n');
+  }
+  while (entries.length > 1 && text.length > CHAT_CONTEXT_MAX_CHARS) {
+    entries.pop();
+    text = entries.join('\n\n');
+  }
+  return text;
+}
+
+function toggleChat() {
+  const panel = document.getElementById('chat-panel');
+  const icon = document.getElementById('chat-launcher-icon');
+  const isOpen = panel.classList.toggle('open');
+  icon.className = isOpen ? 'ti ti-x' : 'ti ti-chevron-up';
+  if (isOpen) { renderChatMessages(); document.getElementById('chat-input').focus(); }
+}
+
+function renderChatMessages() {
+  const box = document.getElementById('chat-messages');
+  if (!chatMessages.length) {
+    box.innerHTML = `<div class="chat-empty">Pose une question sur tes échanges enregistrés.
+      <button class="chat-suggestion" onclick="askSuggestion('Quelle était la deadline évoquée dans mon dernier échange ?')">Quelle était la deadline évoquée dans mon dernier échange ?</button>
+      <button class="chat-suggestion" onclick="askSuggestion('Quelle a été la principale objection du client ?')">Quelle a été la principale objection du client ?</button>
+    </div>`;
+    return;
+  }
+  box.innerHTML = chatMessages.map(m => `<div class="chat-msg ${m.role}">${escapeHtml(m.text)}</div>`).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function askSuggestion(text) {
+  document.getElementById('chat-input').value = text;
+  sendChatMessage();
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const question = input.value.trim();
+  if (!question) return;
+  input.value = '';
+  if (!meetings.length) {
+    chatMessages.push({ role: 'user', text: question });
+    chatMessages.push({ role: 'assistant', text: "Tu n'as encore aucun échange enregistré — commence par en sauvegarder un pour que je puisse répondre à tes questions." });
+    localStorage.setItem('chatMessages', JSON.stringify(chatMessages.slice(-40)));
+    renderChatMessages();
+    return;
+  }
+  chatMessages.push({ role: 'user', text: question });
+  renderChatMessages();
+  const box = document.getElementById('chat-messages');
+  box.insertAdjacentHTML('beforeend', '<div class="chat-msg assistant loading" id="chat-loading">Je consulte tes échanges…</div>');
+  box.scrollTop = box.scrollHeight;
+  try {
+    const context = buildAskContext();
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, context })
+    });
+    const data = await res.json();
+    document.getElementById('chat-loading')?.remove();
+    if (!res.ok || data.error) chatMessages.push({ role: 'assistant', text: data.error || 'Erreur serveur. Réessaie.' });
+    else chatMessages.push({ role: 'assistant', text: data.answer });
+  } catch (e) {
+    document.getElementById('chat-loading')?.remove();
+    chatMessages.push({ role: 'assistant', text: 'Erreur de connexion. Vérifie ton réseau.' });
+  }
+  localStorage.setItem('chatMessages', JSON.stringify(chatMessages.slice(-40)));
+  renderChatMessages();
+}
+
+function openSettings() {
+  renderCategories();
+  applyThemePreference(localStorage.getItem('themePreference') || 'system');
+  openModal('modal-settings');
+}
+function showSettingsTab(tab, el) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('settings-' + tab).classList.add('active');
+}
+
+function renderCategories() {
+  const list = document.getElementById('category-list');
+  list.innerHTML = categories.map(c => {
+    const isOpen = expandedCategoryId === c.id;
+    const isCustom = !!(c.prompt && c.prompt.trim());
+    return `<div class="cat-row">
+      <div class="cat-row-head" onclick="toggleCategoryEditor('${c.id}')">
+        <span class="cat-name">${escapeHtml(c.label)}</span>
+        <span class="cat-badge ${isCustom ? 'custom' : 'default'}">${isCustom ? 'Personnalisé' : 'Par défaut'}</span>
+        <i class="ti ti-chevron-${isOpen ? 'up' : 'down'}"></i>
+      </div>
+      ${isOpen ? renderCategoryEditor(c) : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderCategoryEditor(c) {
+  return `<div class="cat-editor">
+    <div class="field">
+      <label>Nom de la catégorie</label>
+      <input type="text" id="cat-name-${c.id}" value="${escapeHtml(c.label)}" ${c.fixed ? 'disabled' : ''} />
+    </div>
+    <div class="field">
+      <label>Instructions du compte rendu <span class="hint">— le client, les participants et la date sont déjà transmis automatiquement</span></label>
+      <textarea id="cat-prompt-${c.id}" rows="5" placeholder="${escapeHtml(DEFAULT_PROMPT_TEXT)}">${escapeHtml(c.prompt || '')}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="btn btn-sm" onclick="resetCategoryPrompt('${c.id}')">Réinitialiser au prompt par défaut</button>
+      ${!c.fixed ? `<button class="btn btn-sm btn-danger" onclick="deleteCategory('${c.id}')"><i class="ti ti-trash"></i> Supprimer</button>` : ''}
+      <button class="btn btn-sm btn-primary" onclick="saveCategoryEdit('${c.id}')" style="margin-left:auto"><i class="ti ti-check"></i> Enregistrer</button>
+    </div>
+    <div style="padding-top:14px;border-top:1px solid var(--border)">
+      <div class="card-label">Tester ce prompt</div>
+      <div class="field"><textarea id="cat-test-${c.id}" rows="4">${escapeHtml(SAMPLE_TRANSCRIPT)}</textarea></div>
+      <button class="btn btn-sm btn-primary" onclick="testCategoryPrompt('${c.id}')" id="test-btn-${c.id}"><i class="ti ti-sparkles"></i> Générer un aperçu</button>
+      <div class="test-preview-box" id="test-preview-${c.id}" style="display:none"></div>
+    </div>
+  </div>`;
+}
+
+function toggleCategoryEditor(id) {
+  expandedCategoryId = (expandedCategoryId === id) ? null : id;
+  renderCategories();
+}
+
+function addCategory() {
+  const id = 'custom-' + Date.now().toString();
+  categories.push({ id, label: 'Nouvelle catégorie', prompt: '', fixed: false });
+  localStorage.setItem('categories', JSON.stringify(categories));
+  expandedCategoryId = id;
+  renderCategories();
+  updateTypeSelect();
+}
+
+function saveCategoryEdit(id) {
+  const cat = categories.find(c => c.id === id); if (!cat) return;
+  if (!cat.fixed) {
+    const name = document.getElementById('cat-name-' + id).value.trim();
+    if (name) cat.label = name;
+  }
+  cat.prompt = document.getElementById('cat-prompt-' + id).value;
+  localStorage.setItem('categories', JSON.stringify(categories));
+  renderCategories();
+  updateTypeSelect();
+  showToast('Catégorie enregistrée ✓');
+}
+
+function resetCategoryPrompt(id) {
+  const field = document.getElementById('cat-prompt-' + id);
+  if (field) field.value = '';
+}
+
+function deleteCategory(id) {
+  const cat = categories.find(c => c.id === id);
+  if (!cat || cat.fixed) return;
+  if (!confirm('Supprimer cette catégorie ?')) return;
+  categories = categories.filter(c => c.id !== id);
+  localStorage.setItem('categories', JSON.stringify(categories));
+  expandedCategoryId = null;
+  renderCategories();
+  updateTypeSelect();
+  showToast('Catégorie supprimée');
+}
+
+async function testCategoryPrompt(id) {
+  const cat = categories.find(c => c.id === id); if (!cat) return;
+  const instructions = document.getElementById('cat-prompt-' + id).value.trim();
+  const transcript = document.getElementById('cat-test-' + id).value.trim();
+  const preview = document.getElementById('test-preview-' + id);
+  const btn = document.getElementById('test-btn-' + id);
+  if (!transcript || transcript.split(/\s+/).length < 5) { showToast('Ajoutez un exemple de retranscription plus long'); return; }
+  preview.style.display = 'block';
+  preview.innerHTML = '<span style="font-style:italic;color:var(--text3)">Génération de l\'aperçu…</span>';
+  btn.disabled = true;
+  try {
+    const res = await fetch('/api/summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client: 'Client test', title: 'Échange test', participants: 'Participant test', type: document.getElementById('cat-name-' + id).value || cat.label, date: new Date().toLocaleDateString('fr-FR'), transcript, instructions })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) { preview.innerHTML = `<span style="color:var(--red)">${escapeHtml(data.error || 'Erreur serveur')}</span>`; btn.disabled = false; return; }
+    preview.innerHTML = formatSummaryHtml(data.summary) + (data.nextAction ? `<div style="margin-top:8px;font-size:12.5px;color:var(--amber);font-weight:600">→ ${escapeHtml(data.nextAction)}${data.nextDate ? ' · ' + data.nextDate : ''}</div>` : '');
+  } catch (e) {
+    preview.innerHTML = '<span style="color:var(--red)">Erreur de connexion</span>';
+  }
+  btn.disabled = false;
+}
+
 function resetAll() {
   stopRecording(); finalTranscript=''; seconds=0;
   document.getElementById('timer').textContent='00:00';
@@ -719,15 +1148,21 @@ function resetAll() {
   document.getElementById('rec-client').value='';
   document.getElementById('rec-title').value='';
   document.getElementById('rec-participants').value='';
+  document.getElementById('rec-next-action').value='';
+  document.getElementById('rec-next-date').value='';
+  document.getElementById('hero-strip').classList.remove('show');
   updateStatus('','Prêt. Renseignez les informations puis démarrez.');
 }
 
-function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('summary-box').textContent).then(()=>showToast('Copié ✓')); }
+function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('summary-box').innerText).then(()=>showToast('Copié ✓')); }
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+applyThemePreference(localStorage.getItem('themePreference') || 'system');
 updateClientSelect();
+updateTypeSelect();
+renderCategories();
 renderSidebarRecent();
 const draft=localStorage.getItem('draft');
 if(draft){try{const d=JSON.parse(draft);if(d.transcript&&d.transcript.length>10){finalTranscript=d.transcript;document.getElementById('rec-title').value=d.title||'';document.getElementById('rec-participants').value=d.participants||'';updateTranscript();updateStatus('ready','Brouillon restauré.');}}catch(e){}}

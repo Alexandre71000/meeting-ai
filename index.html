@@ -296,8 +296,9 @@ const WHISPER_CHUNK_MS = 15000;
 
 document.getElementById('today-date').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (SpeechRecognition) {
+if (SpeechRecognition && !isIOS) {
   recognition = new SpeechRecognition();
   recognition.lang = 'fr-FR';
   recognition.continuous = true;
@@ -680,7 +681,7 @@ updateClientSelect();
 renderSidebarRecent();
 const draft=localStorage.getItem('draft');
 if(draft){try{const d=JSON.parse(draft);if(d.transcript&&d.transcript.length>10){finalTranscript=d.transcript;document.getElementById('rec-title').value=d.title||'';document.getElementById('rec-participants').value=d.participants||'';updateTranscript();updateStatus('ready','Brouillon restauré.');}}catch(e){}}
-if(!SpeechRecognition){
+if(!recognition){
   const canWhisper=navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.MediaRecorder;
   if(canWhisper) updateStatus('','Prêt (transcription serveur — compatible iPhone).');
   else { updateStatus('','⚠ Utilisez Chrome ou Edge.'); document.getElementById('btn-start').disabled=true; }

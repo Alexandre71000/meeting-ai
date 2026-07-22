@@ -834,7 +834,16 @@ function openMeeting(id) {
 
 function saveNotes(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].notes=document.getElementById('notes-'+id).value; localStorage.setItem('meetings',JSON.stringify(meetings)); showToast('Notes sauvegardées ✓'); }
 function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; localStorage.setItem('meetings',JSON.stringify(meetings)); renderMeetings(); showToast('Action mise à jour ✓'); }
-function copyMeeting(id) { const m=meetings.find(x=>x.id===id); if(!m)return; navigator.clipboard.writeText(m.summary||m.transcript).then(()=>showToast('Copié ✓')); }
+function copyMeeting(id) {
+  const m = meetings.find(x => x.id === id); if (!m) return;
+  const cat = categories.find(c => c.id === m.type);
+  const text = formatMeetingText({
+    client: m.client, title: m.title, date: m.date, participants: m.participants,
+    typeLabel: cat ? cat.label : (m.type || ''), summary: m.summary || m.transcript,
+    nextAction: m.nextAction, nextDate: m.nextDate
+  });
+  navigator.clipboard.writeText(text).then(() => showToast('Copié ✓'));
+}
 function resendEmail(id) { const m=meetings.find(x=>x.id===id); if(!m)return; showToast('Envoi…'); sendEmailAPI(m).then(()=>showToast('Email envoyé ✓')).catch(()=>showToast('Erreur envoi')); }
 function deleteMeeting(id) { if(!confirm('Supprimer ?'))return; meetings=meetings.filter(m=>m.id!==id); localStorage.setItem('meetings',JSON.stringify(meetings)); closeModal('modal-meeting'); renderMeetings(); showToast('Supprimée'); }
 
@@ -926,6 +935,18 @@ function updateHero() {
 }
 
 function escapeHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatMeetingText({ client, title, date, participants, typeLabel, summary, nextAction, nextDate }) {
+  const dateStr = date ? new Date(date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) : '';
+  const metaParts = [dateStr, participants, typeLabel].filter(Boolean);
+  let text = `${client || 'Sans client'}${title ? ' — ' + title : ''}`;
+  if (metaParts.length) text += `\n${metaParts.join(' · ')}`;
+  text += `\n\nCompte rendu :\n${summary || '—'}`;
+  if (nextAction) {
+    text += `\n\nProchaine action : ${nextAction}`;
+    if (nextDate) text += ` (${new Date(nextDate).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })})`;
+  }
+  return text;
+}
 function formatSummaryHtml(text) {
   return (text||'').split('\n').filter(l => l.trim()).map(l => `<div class="summary-line">${escapeHtml(l.replace(/^[-•]\s*/, ''))}</div>`).join('');
 }
@@ -1170,7 +1191,21 @@ function resetAll() {
   updateStatus('','Prêt. Renseignez les informations puis démarrez.');
 }
 
-function copyToClipboard() { navigator.clipboard.writeText(document.getElementById('summary-box').innerText).then(()=>showToast('Copié ✓')); }
+function copyToClipboard() {
+  const typeSelEl = document.getElementById('rec-type');
+  const typeLabel = typeSelEl.options[typeSelEl.selectedIndex] ? typeSelEl.options[typeSelEl.selectedIndex].text : '';
+  const text = formatMeetingText({
+    client: document.getElementById('rec-client').value,
+    title: document.getElementById('rec-title').value,
+    date: new Date(),
+    participants: document.getElementById('rec-participants').value,
+    typeLabel,
+    summary: document.getElementById('summary-box').innerText,
+    nextAction: document.getElementById('rec-next-action').value,
+    nextDate: document.getElementById('rec-next-date').value
+  });
+  navigator.clipboard.writeText(text).then(() => showToast('Copié ✓'));
+}
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2500); }
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

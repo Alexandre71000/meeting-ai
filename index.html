@@ -469,7 +469,7 @@ const DEFAULT_PROMPT_TEXT = `- Le compte rendu doit tenir en 5 à 8 bullet point
 - Priorise l'information actionnable pour un commercial (relance, devis, RDV, objection à traiter).`;
 const SAMPLE_TRANSCRIPT = "Bonjour, merci de nous recevoir. On voulait faire un point sur l'avancement du dossier. Concernant le budget, vous étiez plutôt sur une fourchette de dix à douze mille euros, c'est toujours d'actualité ? Oui tout à fait, et on aimerait avancer assez vite, disons avant la fin du mois. Parfait, je vous envoie une proposition détaillée d'ici deux jours et on recale un point la semaine prochaine.";
 let expandedCategoryId = null;
-let chatMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+let chatMessages = [];
 const CHAT_CONTEXT_MAX_CHARS = 10000;
 let finalTranscript = '';
 let interimTranscript = '';
@@ -1025,7 +1025,6 @@ async function sendChatMessage() {
   if (!meetings.length) {
     chatMessages.push({ role: 'user', text: question });
     chatMessages.push({ role: 'assistant', text: "Tu n'as encore aucun échange enregistré — commence par en sauvegarder un pour que je puisse répondre à tes questions." });
-    localStorage.setItem('chatMessages', JSON.stringify(chatMessages.slice(-40)));
     renderChatMessages();
     return;
   }
@@ -1050,7 +1049,6 @@ async function sendChatMessage() {
     document.getElementById('chat-loading')?.remove();
     chatMessages.push({ role: 'assistant', text: 'Erreur de connexion. Vérifie ton réseau.' });
   }
-  localStorage.setItem('chatMessages', JSON.stringify(chatMessages.slice(-40)));
   renderChatMessages();
 }
 

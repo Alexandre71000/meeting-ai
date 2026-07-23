@@ -20,14 +20,14 @@ Consignes importantes :
 - Si la page ne concerne qu'un seul client, ou n'a pas de structure par client identifiable, retourne une seule entrée avec "client" laissé vide.
 - Ignore l'arrière-plan, la table, les mains ou tout élément qui n'est pas du texte manuscrit.
 
-Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code) au format :
+Réponds UNIQUEMENT avec un JSON valide et complet (sans markdown, sans balises de code, sans texte avant ou après) au format :
 {
   "entries": [
     { "client": "Nom de l'entreprise/client, ou chaîne vide si non identifiable", "text": "Texte transcrit correspondant à ce client" }
   ]
 }
 
-Si aucun texte manuscrit lisible n'est visible sur la photo, réponds : {"entries": []}`;
+Sois concis dans le texte transcrit pour t'assurer que le JSON reste complet et valide. Si aucun texte manuscrit lisible n'est visible sur la photo, réponds : {"entries": []}`;
 
   try {
     const contentType = req.headers['content-type'] || 'image/jpeg';
@@ -48,10 +48,9 @@ Si aucun texte manuscrit lisible n'est visible sur la photo, réponds : {"entrie
             { type: 'image_url', image_url: { url: dataUrl } }
           ]
         }],
-        max_completion_tokens: 1536,
+        max_completion_tokens: 4096,
         temperature: 0.1,
-        reasoning_format: 'hidden',
-        response_format: { type: 'json_object' }
+        reasoning_format: 'hidden'
       })
     });
 
@@ -69,18 +68,23 @@ Si aucun texte manuscrit lisible n'est visible sur la photo, réponds : {"entrie
     const cleaned = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
     let entries = [];
+    let parseFailed = false;
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
         const parsed = JSON.parse(jsonMatch[0]);
         if (Array.isArray(parsed.entries)) entries = parsed.entries.filter(e => e && e.text && e.text.trim());
       } catch {
-        // fall through, entries stays []
+        parseFailed = true;
       }
     }
 
     if (!entries.length && cleaned && !jsonMatch) {
       entries = [{ client: '', text: cleaned }];
+    }
+
+    if (!entries.length && parseFailed) {
+      return res.status(200).json({ error: "La photo contient beaucoup de texte, réessaie (éventuellement en prenant une section à la fois)." });
     }
 
     if (!entries.length) {

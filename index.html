@@ -1029,6 +1029,7 @@ async function sendChatMessage() {
     renderChatMessages();
     return;
   }
+  const history = chatMessages.slice(-6).map(m => ({ role: m.role, text: m.text }));
   chatMessages.push({ role: 'user', text: question });
   renderChatMessages();
   const box = document.getElementById('chat-messages');
@@ -1039,7 +1040,7 @@ async function sendChatMessage() {
     const res = await fetch('/api/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, context })
+      body: JSON.stringify({ question, context, history })
     });
     const data = await res.json();
     document.getElementById('chat-loading')?.remove();

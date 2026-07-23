@@ -358,7 +358,7 @@
       </div>
       <div class="card">
         <div class="card-label">Notes de l'échange</div>
-        <div class="transcript-wrap empty" id="transcript-box" contenteditable="true" oninput="onTranscriptEdit()">Vos notes apparaîtront ici — parlez, écrivez, ou importez une photo…</div>
+        <div class="transcript-wrap empty" id="transcript-box" contenteditable="true" oninput="onTranscriptEdit()" onfocus="onTranscriptFocus()" onblur="onTranscriptBlur()">Vos notes apparaîtront ici — parlez, écrivez, ou importez une photo…</div>
       </div>
       <div class="card card-accent" id="summary-card" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -774,6 +774,22 @@ function onTranscriptEdit() {
   const w = countWords();
   document.getElementById('word-count').textContent = w + ' mot' + (w > 1 ? 's' : '');
   document.getElementById('btn-summary').disabled = w < 5;
+}
+
+function onTranscriptFocus() {
+  const box = document.getElementById('transcript-box');
+  if (box.classList.contains('empty')) {
+    box.textContent = '';
+    box.classList.remove('empty');
+  }
+}
+
+function onTranscriptBlur() {
+  const box = document.getElementById('transcript-box');
+  if (!box.innerText.trim()) {
+    box.classList.add('empty');
+    box.textContent = 'Vos notes apparaîtront ici — parlez, écrivez, ou importez une photo…';
+  }
 }
 
 function countWords() { return finalTranscript.trim() ? finalTranscript.trim().split(/\s+/).length : 0; }
@@ -1343,7 +1359,8 @@ async function addCategory() {
   const id = 'custom-' + Date.now().toString();
   const cat = { id, label: 'Nouvelle catégorie', prompt: '', fixed: false };
   categories.push(cat);
-  await sb.from('categories').insert(cat);
+  const { error } = await sb.from('categories').insert(cat);
+  if (error) { console.error(error); categories = categories.filter(c => c.id !== id); showToast('Erreur : la catégorie n\'a pas pu être créée'); return; }
   expandedCategoryId = id;
   renderCategories();
   updateTypeSelect();
@@ -1351,12 +1368,15 @@ async function addCategory() {
 
 async function saveCategoryEdit(id) {
   const cat = categories.find(c => c.id === id); if (!cat) return;
+  const previousLabel = cat.label;
+  const previousPrompt = cat.prompt;
   if (!cat.fixed) {
     const name = document.getElementById('cat-name-' + id).value.trim();
     if (name) cat.label = name;
   }
   cat.prompt = document.getElementById('cat-prompt-' + id).value;
-  await sb.from('categories').update({ label: cat.label, prompt: cat.prompt }).eq('id', id);
+  const { error } = await sb.from('categories').update({ label: cat.label, prompt: cat.prompt }).eq('id', id);
+  if (error) { console.error(error); cat.label = previousLabel; cat.prompt = previousPrompt; showToast('Erreur : le prompt n\'a pas été sauvegardé'); renderCategories(); return; }
   renderCategories();
   updateTypeSelect();
   showToast('Catégorie enregistrée ✓');
@@ -1371,8 +1391,9 @@ async function deleteCategory(id) {
   const cat = categories.find(c => c.id === id);
   if (!cat || cat.fixed) return;
   if (!confirm('Supprimer cette catégorie ?')) return;
+  const { error } = await sb.from('categories').delete().eq('id', id);
+  if (error) { console.error(error); showToast('Erreur : la catégorie n\'a pas pu être supprimée'); return; }
   categories = categories.filter(c => c.id !== id);
-  await sb.from('categories').delete().eq('id', id);
   expandedCategoryId = null;
   renderCategories();
   updateTypeSelect();

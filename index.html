@@ -1356,11 +1356,17 @@ function showLogin(msg) {
 }
 
 async function sendMagicLink() {
-  const email = document.getElementById('login-email').value.trim();
-  if (!email) { document.getElementById('login-status').textContent = 'Entre ton email.'; return; }
-  document.getElementById('login-status').textContent = 'Envoi en cours…';
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
-  document.getElementById('login-status').textContent = error ? 'Erreur : ' + error.message : 'Lien envoyé ! Vérifie ta boîte mail.';
+  const statusEl = document.getElementById('login-status');
+  try {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) { statusEl.textContent = 'Entre ton email.'; return; }
+    statusEl.textContent = 'Envoi en cours…';
+    if (typeof supabase === 'undefined' || !supabase?.auth) { statusEl.textContent = "Erreur : le service de connexion n'a pas pu charger. Vérifie ta connexion internet et recharge la page."; return; }
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
+    statusEl.textContent = error ? 'Erreur : ' + error.message : 'Lien envoyé ! Vérifie ta boîte mail.';
+  } catch (e) {
+    statusEl.textContent = 'Erreur inattendue : ' + e.message;
+  }
 }
 
 async function maybeMigrateLocalData() {

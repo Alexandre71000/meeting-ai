@@ -27,8 +27,8 @@ ${consignes}
 Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code) :
 {
   "summary": "Compte rendu selon les consignes ci-dessus, un tiret par ligne, séparés par \\n.",
-  "nextAction": "Action commerciale prioritaire en une phrase courte, ou chaine vide",
-  "nextDate": "Date au format YYYY-MM-DD si une prochaine échéance est mentionnée, sinon chaine vide"
+  "nextAction": "Action commerciale UNIQUEMENT si une suite précise et concrète a été explicitement évoquée dans la retranscription (ex: renvoyer un devis, rappeler tel jour, planifier un rdv). N'invente JAMAIS une action qui n'a pas été clairement mentionnée : si rien de précis n'a été dit sur la suite à donner, laisse une chaîne VIDE.",
+  "nextDate": "Date au format YYYY-MM-DD UNIQUEMENT si une échéance précise a été mentionnée pour cette action, sinon chaîne vide"
 }`;
 
   try {

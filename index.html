@@ -119,6 +119,8 @@
     .cat-editor .field { margin-bottom: 10px; }
     .cat-editor .hint { font-weight: 400; color: var(--text3); font-size: 11.5px; text-transform: none; letter-spacing: 0; }
     .test-preview-box { margin-top: 10px; padding: 12px; background: var(--bg3); border-radius: var(--radius-md); font-size: 13px; line-height: 1.7; color: var(--text2); }
+    .contact-row { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 10px 4px; margin-bottom: 10px; background: var(--bg3); }
+    .contact-row .form-row { margin-bottom: 8px; }
     .chat-launcher { position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: var(--teal); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-md); z-index: 150; font-size: 22px; transition: transform 0.15s; border: none; }
     .chat-launcher:hover { transform: scale(1.06); }
     .chat-panel { position: fixed; bottom: 88px; right: 24px; width: 360px; max-width: calc(100vw - 32px); height: 500px; max-height: calc(100vh - 140px); background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); display: flex; flex-direction: column; z-index: 150; opacity: 0; pointer-events: none; transform: translateY(12px); transition: all 0.18s; overflow: hidden; }
@@ -198,6 +200,9 @@
     .action-row input:focus { border-color: var(--amber); }
     .action-row input[type=date] { flex: 1; min-width: 120px; color: var(--text2); }
     .action-row input::placeholder { color: var(--text3); }
+    .action-row.validated { background: var(--teal-bg); border-color: var(--teal); }
+    .action-row.validated i { color: var(--teal); }
+    .action-row.validated #btn-validate-action { background: var(--teal); border-color: var(--teal); color: #fff; }
     .error-box { background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 12px; display: flex; align-items: center; gap: 10px; }
     .error-box span { font-size: 13px; color: var(--danger-text); flex: 1; }
     .meeting-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.1s; }
@@ -352,8 +357,8 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-label">Retranscription en direct</div>
-        <div class="transcript-wrap empty" id="transcript-box" contenteditable="true" oninput="onTranscriptEdit()">La retranscription apparaîtra ici en temps réel…</div>
+        <div class="card-label">Notes de l'échange</div>
+        <div class="transcript-wrap empty" id="transcript-box" contenteditable="true" oninput="onTranscriptEdit()">Vos notes apparaîtront ici — parlez, écrivez, ou importez une photo…</div>
       </div>
       <div class="card card-accent" id="summary-card" style="display:none">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -370,9 +375,9 @@
         <div id="summary-box" contenteditable="true"></div>
         <div class="action-row" id="action-row" style="display:none">
           <i class="ti ti-arrow-right"></i>
-          <input type="text" id="rec-next-action" placeholder="Prochaine action…" oninput="updateHero()" />
-          <input type="date" id="rec-next-date" oninput="updateHero()" />
-          <button class="btn btn-sm" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="updateHero();showToast('Action enregistrée ✓')"><i class="ti ti-check"></i></button>
+          <input type="text" id="rec-next-action" placeholder="Prochaine action…" oninput="onActionFieldEdit()" />
+          <input type="date" id="rec-next-date" oninput="onActionFieldEdit()" />
+          <button class="btn btn-sm" id="btn-validate-action" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="validateAction()" title="Valider cette action"><i class="ti ti-check"></i></button>
         </div>
       </div>
     </div>
@@ -430,11 +435,13 @@
       <button class="modal-close" onclick="closeModal('modal-client')"><i class="ti ti-x"></i></button>
     </div>
     <div class="form-row single"><div class="field"><label>Nom de l'entreprise *</label><input type="text" id="new-client-name" placeholder="Dupont SA" /></div></div>
-    <div class="form-row">
-      <div class="field"><label>Contact principal</label><input type="text" id="new-client-contact" placeholder="Jean Dupont" /></div>
-      <div class="field"><label>Téléphone</label><input type="text" id="new-client-phone" placeholder="06 xx xx xx xx" /></div>
+    <div class="form-row single">
+      <div class="field">
+        <label>Contacts</label>
+        <div id="client-contacts-list"></div>
+        <button type="button" class="btn btn-sm" onclick="addContactRow()" style="margin-top:4px;align-self:flex-start"><i class="ti ti-plus"></i> Ajouter un contact</button>
+      </div>
     </div>
-    <div class="form-row single"><div class="field"><label>Email</label><input type="text" id="new-client-email" placeholder="jean@dupont.fr" /></div></div>
     <div class="form-row single"><div class="field"><label>Notes</label><textarea id="new-client-notes" placeholder="Informations importantes…"></textarea></div></div>
     <input type="hidden" id="edit-client-id" />
     <button class="btn btn-primary" onclick="saveClient()" style="width:100%;justify-content:center;margin-top:8px"><i class="ti ti-check"></i> Enregistrer</button>
@@ -508,6 +515,8 @@ const DEFAULT_PROMPT_TEXT = `- Le compte rendu doit tenir en 5 à 8 bullet point
 - Priorise l'information actionnable pour un commercial (relance, devis, RDV, objection à traiter).`;
 const SAMPLE_TRANSCRIPT = "Bonjour, merci de nous recevoir. On voulait faire un point sur l'avancement du dossier. Concernant le budget, vous étiez plutôt sur une fourchette de dix à douze mille euros, c'est toujours d'actualité ? Oui tout à fait, et on aimerait avancer assez vite, disons avant la fin du mois. Parfait, je vous envoie une proposition détaillée d'ici deux jours et on recale un point la semaine prochaine.";
 let expandedCategoryId = null;
+let actionValidated = false;
+let editingContacts = [];
 let chatMessages = [];
 const CHAT_CONTEXT_MAX_CHARS = 10000;
 let finalTranscript = '';
@@ -800,6 +809,8 @@ async function generateSummary() {
 
   document.getElementById('summary-card').style.display = 'block';
   document.getElementById('action-row').style.display = 'none';
+  document.getElementById('action-row').classList.remove('validated');
+  actionValidated = false;
   const box = document.getElementById('summary-box');
   box.className = 'summary-text loading';
   box.textContent = 'Analyse en cours…';
@@ -826,9 +837,15 @@ async function generateSummary() {
 
     box.className = 'summary-text';
     box.innerHTML = formatSummaryHtml(data.summary.replace(/\\n/g, '\n'));
-    document.getElementById('action-row').style.display = 'flex';
-    if (data.nextAction) document.getElementById('rec-next-action').value = data.nextAction;
-    if (data.nextDate) document.getElementById('rec-next-date').value = data.nextDate;
+    if (data.nextAction) {
+      document.getElementById('rec-next-action').value = data.nextAction;
+      document.getElementById('rec-next-date').value = data.nextDate || '';
+      document.getElementById('action-row').style.display = 'flex';
+    } else {
+      document.getElementById('rec-next-action').value = '';
+      document.getElementById('rec-next-date').value = '';
+      document.getElementById('action-row').style.display = 'none';
+    }
     updateHero();
 
   } catch (err) {
@@ -845,28 +862,34 @@ function sendEmailAPI(meeting) {
 function sendCurrentEmail() {
   const summary = document.getElementById('summary-box').innerText || '';
   if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
-  const meeting = { title: document.getElementById('rec-title').value || 'Échange', client: document.getElementById('rec-client').value || 'Non renseigné', date: new Date().toISOString(), participants: document.getElementById('rec-participants').value, summary, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value };
+  const meeting = { title: document.getElementById('rec-title').value || 'Échange', client: document.getElementById('rec-client').value || 'Non renseigné', date: new Date().toISOString(), participants: document.getElementById('rec-participants').value, summary, nextAction: actionValidated ? document.getElementById('rec-next-action').value : '', nextDate: actionValidated ? document.getElementById('rec-next-date').value : '' };
   showToast('Envoi…');
   sendEmailAPI(meeting).then(() => showToast('Email envoyé ✓')).catch(() => showToast('Erreur envoi'));
 }
 
 function meetingToRow(m) { return { id: m.id, client: m.client, title: m.title, participants: m.participants, type: m.type, next_action: m.nextAction, next_date: m.nextDate, transcript: m.transcript, summary: m.summary, notes: m.notes, duration: m.duration, date: m.date }; }
 function rowToMeeting(r) { return { id: r.id, client: r.client, title: r.title, participants: r.participants, type: r.type, nextAction: r.next_action, nextDate: r.next_date, transcript: r.transcript, summary: r.summary, notes: r.notes, duration: r.duration, date: r.date }; }
-function clientToRow(c) { return { id: c.id, name: c.name, contact: c.contact, phone: c.phone, email: c.email, notes: c.notes, created_at: c.createdAt }; }
-function rowToClient(r) { return { id: r.id, name: r.name, contact: r.contact, phone: r.phone, email: r.email, notes: r.notes, createdAt: r.created_at }; }
+function clientToRow(c) { return { id: c.id, name: c.name, contact: '', phone: '', email: '', notes: c.notes, contacts: c.contacts || [], created_at: c.createdAt }; }
+function rowToClient(r) {
+  let contacts = Array.isArray(r.contacts) ? r.contacts : [];
+  if (!contacts.length && (r.contact || r.phone || r.email)) {
+    contacts = [{ id: 'legacy-' + r.id, name: r.contact || '', role: '', phone: r.phone || '', email: r.email || '' }];
+  }
+  return { id: r.id, name: r.name, contacts, notes: r.notes, createdAt: r.created_at };
+}
 
 async function saveMeeting() {
   const summaryEl = document.getElementById('summary-box');
   const summary = summaryEl.innerText || '';
   if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
   const clientName = document.getElementById('rec-client').value || 'Sans client';
-  const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Échange', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value, transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
+  const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Échange', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: actionValidated ? document.getElementById('rec-next-action').value : '', nextDate: actionValidated ? document.getElementById('rec-next-date').value : '', transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
   meetings.unshift(meeting);
   const { error } = await sb.from('meetings').insert(meetingToRow(meeting));
   if (error) { console.error(error); showToast('Erreur de sauvegarde'); return; }
   localStorage.removeItem('draft');
   if (clientName && clientName !== 'Sans client' && !clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())) {
-    const client = { id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() };
+    const client = { id: Date.now().toString(), name: clientName, contacts: [], notes: '', createdAt: new Date().toISOString() };
     clients.push(client);
     await sb.from('clients').insert(clientToRow(client));
   }
@@ -950,7 +973,7 @@ function openMeeting(id) {
       <textarea id="notes-${id}" style="width:100%;padding:10px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:13px;font-family:inherit;min-height:80px;resize:vertical;outline:none" placeholder="Ajoutez vos notes…">${m.notes||''}</textarea>
       <button class="btn btn-sm" onclick="saveNotes('${id}')" style="margin-top:6px"><i class="ti ti-device-floppy"></i> Sauvegarder notes</button>
     </div>
-    <div class="detail-section"><div class="detail-label">Retranscription</div><div class="detail-content" style="max-height:160px;overflow-y:auto">${m.transcript}</div></div>
+    <div class="detail-section"><div class="detail-label">Notes de l'échange</div><div class="detail-content" style="max-height:160px;overflow-y:auto">${m.transcript}</div></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
       <button class="btn btn-sm" onclick="copyMeeting('${id}')"><i class="ti ti-copy"></i> Copier le CR</button>
       <button class="btn btn-sm btn-primary" onclick="resendEmail('${id}')"><i class="ti ti-mail"></i> Envoyer email</button>
@@ -980,9 +1003,10 @@ function renderClients() {
   list.innerHTML = clients.map(c => {
     const initials = c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     const count = meetings.filter(m=>(m.client||'').toLowerCase()===c.name.toLowerCase()).length;
+    const firstPhone = (c.contacts && c.contacts[0] && c.contacts[0].phone) || '';
     return `<div class="client-item" onclick="openClient('${c.id}')">
       <div class="avatar">${initials}</div>
-      <div style="flex:1"><div class="client-name">${c.name}</div><div class="client-sub">${count} échange${count!==1?'s':''}${c.phone?' · '+c.phone:''}</div></div>
+      <div style="flex:1"><div class="client-name">${c.name}</div><div class="client-sub">${count} échange${count!==1?'s':''}${firstPhone?' · '+firstPhone:''}</div></div>
       <i class="ti ti-chevron-right" style="color:var(--border2)"></i>
     </div>`;
   }).join('');
@@ -993,13 +1017,18 @@ function openClient(id) {
   const cms=meetings.filter(m=>(m.client||'').toLowerCase()===c.name.toLowerCase());
   const initials=c.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
   document.getElementById('modal-meeting-title').textContent=c.name;
+  const contacts = c.contacts || [];
   document.getElementById('modal-meeting-content').innerHTML=`
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
-      <div class="avatar" style="width:48px;height:48px;font-size:16px">${initials}</div>
-      <div>
-        ${c.contact?`<div style="font-size:13px;color:var(--text2);margin-bottom:2px"><i class="ti ti-user" style="font-size:13px;margin-right:4px"></i>${c.contact}</div>`:''}
-        ${c.phone?`<div style="font-size:13px;color:var(--text2);margin-bottom:2px"><i class="ti ti-phone" style="font-size:13px;margin-right:4px"></i>${c.phone}</div>`:''}
-        ${c.email?`<div style="font-size:13px;color:var(--text2)"><i class="ti ti-mail" style="font-size:13px;margin-right:4px"></i>${c.email}</div>`:''}
+      <div class="avatar" style="width:48px;height:48px;font-size:16px;flex-shrink:0">${initials}</div>
+      <div style="flex:1;min-width:0">
+        ${!contacts.length ? '<div style="font-size:13px;color:var(--text3)">Aucun contact renseigné.</div>' : contacts.map(ct => `
+          <div style="margin-bottom:8px">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${escapeHtml(ct.name||'Contact')}${ct.role?` <span style="font-weight:400;color:var(--text3)">· ${escapeHtml(ct.role)}</span>`:''}</div>
+            ${ct.phone?`<div style="font-size:12.5px;color:var(--text2)"><i class="ti ti-phone" style="font-size:12px;margin-right:4px"></i>${escapeHtml(ct.phone)}</div>`:''}
+            ${ct.email?`<div style="font-size:12.5px;color:var(--text2)"><i class="ti ti-mail" style="font-size:12px;margin-right:4px"></i>${escapeHtml(ct.email)}</div>`:''}
+          </div>
+        `).join('')}
       </div>
     </div>
     ${c.notes?`<div class="detail-section"><div class="detail-label">Notes</div><div class="detail-content">${c.notes}</div></div>`:''}
@@ -1018,18 +1047,60 @@ function openClient(id) {
   openModal('modal-meeting');
 }
 
-function openAddClient() { document.getElementById('modal-client-title').textContent='Nouveau client'; ['new-client-name','new-client-contact','new-client-phone','new-client-email','new-client-notes'].forEach(i=>document.getElementById(i).value=''); document.getElementById('edit-client-id').value=''; openModal('modal-client'); }
+function renderContactRows() {
+  const list = document.getElementById('client-contacts-list');
+  if (!editingContacts.length) { list.innerHTML = '<p style="font-size:12.5px;color:var(--text3);margin:2px 0 6px">Aucun contact ajouté.</p>'; return; }
+  list.innerHTML = editingContacts.map((ct, i) => `
+    <div class="contact-row">
+      <div class="form-row">
+        <div class="field"><label>Nom</label><input type="text" value="${escapeHtml(ct.name||'')}" oninput="updateContactField(${i},'name',this.value)" placeholder="Jean Dupont" /></div>
+        <div class="field"><label>Poste</label><input type="text" value="${escapeHtml(ct.role||'')}" oninput="updateContactField(${i},'role',this.value)" placeholder="Responsable achats" /></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Téléphone</label><input type="text" value="${escapeHtml(ct.phone||'')}" oninput="updateContactField(${i},'phone',this.value)" placeholder="06 xx xx xx xx" /></div>
+        <div class="field"><label>Email</label><input type="text" value="${escapeHtml(ct.email||'')}" oninput="updateContactField(${i},'email',this.value)" placeholder="jean@dupont.fr" /></div>
+      </div>
+      <button type="button" class="btn btn-sm btn-danger" onclick="removeContactRow(${i})" style="margin-bottom:8px"><i class="ti ti-trash"></i> Retirer ce contact</button>
+    </div>
+  `).join('');
+}
+function updateContactField(i, field, value) { if (editingContacts[i]) editingContacts[i][field] = value; }
+function addContactRow() { editingContacts.push({ id: 'c' + Date.now().toString() + Math.random().toString(36).slice(2,6), name:'', role:'', phone:'', email:'' }); renderContactRows(); }
+function removeContactRow(i) { editingContacts.splice(i,1); renderContactRows(); }
+
+function openAddClient() {
+  document.getElementById('modal-client-title').textContent='Nouveau client';
+  document.getElementById('new-client-name').value='';
+  document.getElementById('new-client-notes').value='';
+  document.getElementById('edit-client-id').value='';
+  editingContacts = [];
+  renderContactRows();
+  openModal('modal-client');
+}
 function openAddClientFromRecord() { openAddClient(); }
-function openEditClient(id) { const c=clients.find(x=>x.id===id); if(!c)return; closeModal('modal-meeting'); setTimeout(()=>{ document.getElementById('modal-client-title').textContent='Modifier le client'; document.getElementById('new-client-name').value=c.name; document.getElementById('new-client-contact').value=c.contact||''; document.getElementById('new-client-phone').value=c.phone||''; document.getElementById('new-client-email').value=c.email||''; document.getElementById('new-client-notes').value=c.notes||''; document.getElementById('edit-client-id').value=id; openModal('modal-client'); },200); }
+function openEditClient(id) {
+  const c=clients.find(x=>x.id===id); if(!c)return;
+  closeModal('modal-meeting');
+  setTimeout(()=>{
+    document.getElementById('modal-client-title').textContent='Modifier le client';
+    document.getElementById('new-client-name').value=c.name;
+    document.getElementById('new-client-notes').value=c.notes||'';
+    document.getElementById('edit-client-id').value=id;
+    editingContacts = (c.contacts||[]).map(ct=>({...ct}));
+    renderContactRows();
+    openModal('modal-client');
+  },200);
+}
 
 async function saveClient() {
   const name=document.getElementById('new-client-name').value.trim(); if(!name){showToast('Entrez un nom');return;}
   const editId=document.getElementById('edit-client-id').value;
-  const data={name,contact:document.getElementById('new-client-contact').value,phone:document.getElementById('new-client-phone').value,email:document.getElementById('new-client-email').value,notes:document.getElementById('new-client-notes').value};
+  const contacts = editingContacts.filter(ct => (ct.name||'').trim() || (ct.phone||'').trim() || (ct.email||'').trim() || (ct.role||'').trim());
+  const data={name, notes:document.getElementById('new-client-notes').value, contacts};
   if(editId){
     const idx=clients.findIndex(c=>c.id===editId);
     if(idx!==-1)clients[idx]={...clients[idx],...data};
-    await sb.from('clients').update(data).eq('id', editId);
+    await sb.from('clients').update({ name: data.name, notes: data.notes, contacts: data.contacts }).eq('id', editId);
   } else {
     const client={id:Date.now().toString(),...data,createdAt:new Date().toISOString()};
     clients.push(client);
@@ -1058,13 +1129,28 @@ function updateHero() {
   const nextAction = document.getElementById('rec-next-action').value;
   const nextDate = document.getElementById('rec-next-date').value;
   const heroAction = document.getElementById('hero-action');
-  if (nextAction) {
+  if (nextAction && actionValidated) {
     document.getElementById('hero-action-text').textContent = nextAction + (nextDate ? ' · ' + new Date(nextDate).toLocaleDateString('fr-FR', {day:'numeric',month:'short'}) : '');
     heroAction.style.display = 'flex';
   } else {
     heroAction.style.display = 'none';
   }
   strip.classList.add('show');
+}
+
+function onActionFieldEdit() {
+  actionValidated = false;
+  document.getElementById('action-row').classList.remove('validated');
+  updateHero();
+}
+
+function validateAction() {
+  const action = document.getElementById('rec-next-action').value.trim();
+  if (!action) { showToast('Décrivez une action avant de valider'); return; }
+  actionValidated = true;
+  document.getElementById('action-row').classList.add('validated');
+  updateHero();
+  showToast('Action validée ✓');
 }
 
 function escapeHtml(str) { return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1110,16 +1196,27 @@ Prochaine action : ${m.nextAction ? m.nextAction + (m.nextDate ? ' (' + m.nextDa
   return block;
 }
 
+function buildClientsBlock() {
+  if (!clients.length) return '';
+  const blocks = clients.map(c => {
+    const contactLines = (c.contacts || []).map(ct => `  - ${ct.name || 'Contact'}${ct.role ? ' (' + ct.role + ')' : ''}${ct.phone ? ' · Tél : ' + ct.phone : ''}${ct.email ? ' · Email : ' + ct.email : ''}`).join('\n');
+    return `--- Client : ${c.name}${c.notes ? `\nNotes : ${c.notes}` : ''}${contactLines ? `\nContacts :\n${contactLines}` : ''}`;
+  });
+  return blocks.join('\n\n');
+}
+
 function buildAskContext() {
+  const clientsBlock = buildClientsBlock();
+  const prefix = clientsBlock ? clientsBlock + '\n\n' : '';
   let entries = meetings.map(m => buildEntryBlock(m, true));
-  let text = entries.join('\n\n');
+  let text = prefix + entries.join('\n\n');
   if (text.length > CHAT_CONTEXT_MAX_CHARS) {
     entries = meetings.map(m => buildEntryBlock(m, false));
-    text = entries.join('\n\n');
+    text = prefix + entries.join('\n\n');
   }
   while (entries.length > 1 && text.length > CHAT_CONTEXT_MAX_CHARS) {
     entries.pop();
-    text = entries.join('\n\n');
+    text = prefix + entries.join('\n\n');
   }
   return text;
 }
@@ -1155,9 +1252,9 @@ async function sendChatMessage() {
   const question = input.value.trim();
   if (!question) return;
   input.value = '';
-  if (!meetings.length) {
+  if (!meetings.length && !clients.length) {
     chatMessages.push({ role: 'user', text: question });
-    chatMessages.push({ role: 'assistant', text: "Tu n'as encore aucun échange enregistré — commence par en sauvegarder un pour que je puisse répondre à tes questions." });
+    chatMessages.push({ role: 'assistant', text: "Tu n'as encore aucun échange ni client enregistré — commence par en sauvegarder un pour que je puisse répondre à tes questions." });
     renderChatMessages();
     return;
   }
@@ -1311,7 +1408,7 @@ function resetAll() {
   stopRecording(); finalTranscript=''; seconds=0;
   document.getElementById('timer').textContent='00:00';
   document.getElementById('transcript-box').className='transcript-wrap empty';
-  document.getElementById('transcript-box').textContent='La retranscription apparaîtra ici en temps réel…';
+  document.getElementById('transcript-box').textContent='Vos notes apparaîtront ici — parlez, écrivez, ou importez une photo…';
   document.getElementById('word-count').textContent='0 mot';
   document.getElementById('summary-card').style.display='none';
   document.getElementById('btn-summary').disabled=true;
@@ -1320,6 +1417,9 @@ function resetAll() {
   document.getElementById('rec-participants').value='';
   document.getElementById('rec-next-action').value='';
   document.getElementById('rec-next-date').value='';
+  document.getElementById('action-row').classList.remove('validated');
+  document.getElementById('action-row').style.display='none';
+  actionValidated = false;
   document.getElementById('hero-strip').classList.remove('show');
   updateStatus('','Prêt. Renseignez les informations puis démarrez.');
 }
@@ -1334,8 +1434,8 @@ function copyToClipboard() {
     participants: document.getElementById('rec-participants').value,
     typeLabel,
     summary: document.getElementById('summary-box').innerText,
-    nextAction: document.getElementById('rec-next-action').value,
-    nextDate: document.getElementById('rec-next-date').value
+    nextAction: actionValidated ? document.getElementById('rec-next-action').value : '',
+    nextDate: actionValidated ? document.getElementById('rec-next-date').value : ''
   });
   navigator.clipboard.writeText(text).then(() => showToast('Copié ✓'));
 }

@@ -24,9 +24,14 @@ create table clients (
   contact text,
   phone text,
   email text,
+  contacts jsonb default '[]'::jsonb,
   notes text,
   created_at timestamptz
 );
+
+-- Si la table "clients" existe déjà (projet Supabase créé avant l'ajout des contacts multiples),
+-- exécuter cette ligne seule dans le SQL Editor pour ajouter la colonne sans perdre de données :
+-- alter table clients add column if not exists contacts jsonb default '[]'::jsonb;
 
 create table categories (
   id text primary key,

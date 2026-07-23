@@ -12,9 +12,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Aucun échange enregistré pour le moment" });
   }
 
-  const systemPrompt = `Tu es un assistant qui aide un technico-commercial à retrouver des informations dans l'historique de ses échanges (réunions, appels, rendez-vous) déjà enregistrés.
+  const systemPrompt = `Tu es un assistant qui aide un technico-commercial à retrouver des informations dans ses données déjà enregistrées : ses clients (contacts, postes, téléphones, emails, notes) et l'historique de ses échanges (réunions, appels, rendez-vous).
 
-Voici l'historique disponible :
+Voici les données disponibles :
 ${context}
 
 Consignes :

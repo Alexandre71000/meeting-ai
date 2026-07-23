@@ -260,9 +260,24 @@
       .modal { padding: 1.15rem; }
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
 <body>
-<div class="layout">
+<div id="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.5rem">
+  <div class="card" style="max-width:380px;width:100%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.25rem">
+      <div class="logo-icon"><i class="ti ti-microphone"></i></div>
+      <div style="font-weight:700;font-size:18px">MeetingAI</div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Adresse email</label>
+      <input type="email" id="login-email" placeholder="toi@exemple.fr" />
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="sendMagicLink()"><i class="ti ti-mail"></i> Recevoir un lien de connexion</button>
+    <p id="login-status" style="font-size:13px;color:var(--text2);margin-top:12px"></p>
+  </div>
+</div>
+<div class="layout" id="app-layout" style="display:none">
   <aside class="sidebar">
     <div class="logo">
       <div class="logo-icon"><i class="ti ti-microphone"></i></div>
@@ -468,14 +483,18 @@
 </div>
 
 <script>
-let meetings = JSON.parse(localStorage.getItem('meetings') || '[]');
-let clients = JSON.parse(localStorage.getItem('clients') || '[]');
+const SUPABASE_URL = 'https://wjsinbsiprfdatbuhyrb.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_iR2rXSRsMYWmUtrvsNBDmg_ieJHfrAc';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let meetings = [];
+let clients = [];
 const DEFAULT_CATEGORIES = [
   { id: 'rdv', label: 'Rendez-vous client', prompt: '', fixed: true },
   { id: 'reunion', label: 'Réunion interne', prompt: '', fixed: true },
   { id: 'appel', label: 'Appel téléphonique', prompt: '', fixed: true }
 ];
-let categories = JSON.parse(localStorage.getItem('categories') || 'null') || DEFAULT_CATEGORIES.map(c => ({...c}));
+let categories = DEFAULT_CATEGORIES.map(c => ({...c}));
 const DEFAULT_PROMPT_TEXT = `- Le compte rendu doit tenir en 5 à 8 bullet points maximum (un tiret "-" par ligne).
 - Va droit au but : besoins client, points bloquants, décisions, chiffres/prix évoqués, prochaines étapes commerciales.
 - Pas de blabla, pas de reformulation inutile, pas de phrases d'introduction ou de conclusion.
@@ -824,18 +843,25 @@ function sendCurrentEmail() {
   sendEmailAPI(meeting).then(() => showToast('Email envoyé ✓')).catch(() => showToast('Erreur envoi'));
 }
 
-function saveMeeting() {
+function meetingToRow(m) { return { id: m.id, client: m.client, title: m.title, participants: m.participants, type: m.type, next_action: m.nextAction, next_date: m.nextDate, transcript: m.transcript, summary: m.summary, notes: m.notes, duration: m.duration, date: m.date }; }
+function rowToMeeting(r) { return { id: r.id, client: r.client, title: r.title, participants: r.participants, type: r.type, nextAction: r.next_action, nextDate: r.next_date, transcript: r.transcript, summary: r.summary, notes: r.notes, duration: r.duration, date: r.date }; }
+function clientToRow(c) { return { id: c.id, name: c.name, contact: c.contact, phone: c.phone, email: c.email, notes: c.notes, created_at: c.createdAt }; }
+function rowToClient(r) { return { id: r.id, name: r.name, contact: r.contact, phone: r.phone, email: r.email, notes: r.notes, createdAt: r.created_at }; }
+
+async function saveMeeting() {
   const summaryEl = document.getElementById('summary-box');
   const summary = summaryEl.innerText || '';
   if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
   const clientName = document.getElementById('rec-client').value || 'Sans client';
   const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Échange', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value, transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
   meetings.unshift(meeting);
-  localStorage.setItem('meetings', JSON.stringify(meetings));
+  const { error } = await supabase.from('meetings').insert(meetingToRow(meeting));
+  if (error) { console.error(error); showToast('Erreur de sauvegarde'); return; }
   localStorage.removeItem('draft');
   if (clientName && clientName !== 'Sans client' && !clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())) {
-    clients.push({ id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() });
-    localStorage.setItem('clients', JSON.stringify(clients));
+    const client = { id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() };
+    clients.push(client);
+    await supabase.from('clients').insert(clientToRow(client));
   }
   showToast('Échange sauvegardé ✓');
   resetAll(); showPage('meetings');
@@ -926,8 +952,8 @@ function openMeeting(id) {
   openModal('modal-meeting');
 }
 
-function saveNotes(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].notes=document.getElementById('notes-'+id).value; localStorage.setItem('meetings',JSON.stringify(meetings)); showToast('Notes sauvegardées ✓'); }
-function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; localStorage.setItem('meetings',JSON.stringify(meetings)); renderMeetings(); showToast('Action mise à jour ✓'); }
+async function saveNotes(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].notes=document.getElementById('notes-'+id).value; await supabase.from('meetings').update({ notes: meetings[idx].notes }).eq('id', id); showToast('Notes sauvegardées ✓'); }
+async function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; await supabase.from('meetings').update({ next_action: meetings[idx].nextAction, next_date: meetings[idx].nextDate }).eq('id', id); renderMeetings(); showToast('Action mise à jour ✓'); }
 function copyMeeting(id) {
   const m = meetings.find(x => x.id === id); if (!m) return;
   const cat = categories.find(c => c.id === m.type);
@@ -939,7 +965,7 @@ function copyMeeting(id) {
   navigator.clipboard.writeText(text).then(() => showToast('Copié ✓'));
 }
 function resendEmail(id) { const m=meetings.find(x=>x.id===id); if(!m)return; showToast('Envoi…'); sendEmailAPI(m).then(()=>showToast('Email envoyé ✓')).catch(()=>showToast('Erreur envoi')); }
-function deleteMeeting(id) { if(!confirm('Supprimer ?'))return; meetings=meetings.filter(m=>m.id!==id); localStorage.setItem('meetings',JSON.stringify(meetings)); closeModal('modal-meeting'); renderMeetings(); showToast('Supprimée'); }
+async function deleteMeeting(id) { if(!confirm('Supprimer ?'))return; meetings=meetings.filter(m=>m.id!==id); await supabase.from('meetings').delete().eq('id', id); closeModal('modal-meeting'); renderMeetings(); showToast('Supprimée'); }
 
 function renderClients() {
   const list = document.getElementById('clients-list');
@@ -989,17 +1015,23 @@ function openAddClient() { document.getElementById('modal-client-title').textCon
 function openAddClientFromRecord() { openAddClient(); }
 function openEditClient(id) { const c=clients.find(x=>x.id===id); if(!c)return; closeModal('modal-meeting'); setTimeout(()=>{ document.getElementById('modal-client-title').textContent='Modifier le client'; document.getElementById('new-client-name').value=c.name; document.getElementById('new-client-contact').value=c.contact||''; document.getElementById('new-client-phone').value=c.phone||''; document.getElementById('new-client-email').value=c.email||''; document.getElementById('new-client-notes').value=c.notes||''; document.getElementById('edit-client-id').value=id; openModal('modal-client'); },200); }
 
-function saveClient() {
+async function saveClient() {
   const name=document.getElementById('new-client-name').value.trim(); if(!name){showToast('Entrez un nom');return;}
   const editId=document.getElementById('edit-client-id').value;
   const data={name,contact:document.getElementById('new-client-contact').value,phone:document.getElementById('new-client-phone').value,email:document.getElementById('new-client-email').value,notes:document.getElementById('new-client-notes').value};
-  if(editId){const idx=clients.findIndex(c=>c.id===editId);if(idx!==-1)clients[idx]={...clients[idx],...data};}
-  else clients.push({id:Date.now().toString(),...data,createdAt:new Date().toISOString()});
-  localStorage.setItem('clients',JSON.stringify(clients));
+  if(editId){
+    const idx=clients.findIndex(c=>c.id===editId);
+    if(idx!==-1)clients[idx]={...clients[idx],...data};
+    await supabase.from('clients').update(data).eq('id', editId);
+  } else {
+    const client={id:Date.now().toString(),...data,createdAt:new Date().toISOString()};
+    clients.push(client);
+    await supabase.from('clients').insert(clientToRow(client));
+  }
   closeModal('modal-client'); renderClients(); updateClientSelect(name); showToast(editId?'Client modifié ✓':'Client créé ✓');
 }
 
-function deleteClient(id) { if(!confirm('Supprimer ?'))return; clients=clients.filter(c=>c.id!==id); localStorage.setItem('clients',JSON.stringify(clients)); closeModal('modal-meeting'); renderClients(); updateClientSelect(); showToast('Client supprimé'); }
+async function deleteClient(id) { if(!confirm('Supprimer ?'))return; clients=clients.filter(c=>c.id!==id); await supabase.from('clients').delete().eq('id', id); closeModal('modal-meeting'); renderClients(); updateClientSelect(); showToast('Client supprimé'); }
 function updateStatus(state,msg) { document.getElementById('status-dot').className='dot '+state; document.getElementById('status-text').textContent=msg; }
 
 function updateHero() {
@@ -1203,23 +1235,24 @@ function toggleCategoryEditor(id) {
   renderCategories();
 }
 
-function addCategory() {
+async function addCategory() {
   const id = 'custom-' + Date.now().toString();
-  categories.push({ id, label: 'Nouvelle catégorie', prompt: '', fixed: false });
-  localStorage.setItem('categories', JSON.stringify(categories));
+  const cat = { id, label: 'Nouvelle catégorie', prompt: '', fixed: false };
+  categories.push(cat);
+  await supabase.from('categories').insert(cat);
   expandedCategoryId = id;
   renderCategories();
   updateTypeSelect();
 }
 
-function saveCategoryEdit(id) {
+async function saveCategoryEdit(id) {
   const cat = categories.find(c => c.id === id); if (!cat) return;
   if (!cat.fixed) {
     const name = document.getElementById('cat-name-' + id).value.trim();
     if (name) cat.label = name;
   }
   cat.prompt = document.getElementById('cat-prompt-' + id).value;
-  localStorage.setItem('categories', JSON.stringify(categories));
+  await supabase.from('categories').update({ label: cat.label, prompt: cat.prompt }).eq('id', id);
   renderCategories();
   updateTypeSelect();
   showToast('Catégorie enregistrée ✓');
@@ -1230,12 +1263,12 @@ function resetCategoryPrompt(id) {
   if (field) field.value = '';
 }
 
-function deleteCategory(id) {
+async function deleteCategory(id) {
   const cat = categories.find(c => c.id === id);
   if (!cat || cat.fixed) return;
   if (!confirm('Supprimer cette catégorie ?')) return;
   categories = categories.filter(c => c.id !== id);
-  localStorage.setItem('categories', JSON.stringify(categories));
+  await supabase.from('categories').delete().eq('id', id);
   expandedCategoryId = null;
   renderCategories();
   updateTypeSelect();
@@ -1304,10 +1337,6 @@ function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 applyThemePreference(localStorage.getItem('themePreference') || 'system');
-updateClientSelect();
-updateTypeSelect();
-renderCategories();
-renderSidebarRecent();
 const draft=localStorage.getItem('draft');
 if(draft){try{const d=JSON.parse(draft);if(d.transcript&&d.transcript.length>10){finalTranscript=d.transcript;document.getElementById('rec-title').value=d.title||'';document.getElementById('rec-participants').value=d.participants||'';updateTranscript();updateStatus('ready','Brouillon restauré.');}}catch(e){}}
 if(!recognition){
@@ -1315,6 +1344,76 @@ if(!recognition){
   if(canWhisper) updateStatus('','Prêt (transcription serveur — compatible iPhone).');
   else { updateStatus('','⚠ Utilisez Chrome ou Edge.'); document.getElementById('btn-start').disabled=true; }
 }
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-layout').style.display = '';
+}
+function showLogin(msg) {
+  document.getElementById('app-layout').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  if (msg) document.getElementById('login-status').textContent = msg;
+}
+
+async function sendMagicLink() {
+  const email = document.getElementById('login-email').value.trim();
+  if (!email) { document.getElementById('login-status').textContent = 'Entre ton email.'; return; }
+  document.getElementById('login-status').textContent = 'Envoi en cours…';
+  const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
+  document.getElementById('login-status').textContent = error ? 'Erreur : ' + error.message : 'Lien envoyé ! Vérifie ta boîte mail.';
+}
+
+async function maybeMigrateLocalData() {
+  const localMeetings = JSON.parse(localStorage.getItem('meetings') || '[]');
+  const localClients = JSON.parse(localStorage.getItem('clients') || '[]');
+  if (!localMeetings.length && !localClients.length) return;
+  if (meetings.length || clients.length) return;
+  if (!confirm(`Des données existantes ont été trouvées sur cet appareil (${localMeetings.length} échange(s), ${localClients.length} client(s)). Les importer dans ton compte ?`)) return;
+  for (const c of localClients) await supabase.from('clients').insert(clientToRow(c));
+  for (const m of localMeetings) await supabase.from('meetings').insert(meetingToRow(m));
+  clients = localClients;
+  meetings = localMeetings;
+  localStorage.removeItem('meetings');
+  localStorage.removeItem('clients');
+  showToast('Données importées ✓');
+}
+
+async function loadAllData() {
+  const [{ data: meetingRows }, { data: clientRows }, { data: categoryRows }] = await Promise.all([
+    supabase.from('meetings').select('*').order('date', { ascending: false }),
+    supabase.from('clients').select('*'),
+    supabase.from('categories').select('*')
+  ]);
+  meetings = (meetingRows || []).map(rowToMeeting);
+  clients = (clientRows || []).map(rowToClient);
+
+  if (categoryRows && categoryRows.length) {
+    categories = categoryRows.map(r => ({ id: r.id, label: r.label, prompt: r.prompt, fixed: r.fixed }));
+  } else {
+    categories = DEFAULT_CATEGORIES.map(c => ({...c}));
+    await supabase.from('categories').insert(categories);
+  }
+
+  await maybeMigrateLocalData();
+
+  updateClientSelect();
+  updateTypeSelect();
+  renderCategories();
+  renderSidebarRecent();
+}
+
+async function initAuth() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) { await loadAllData(); showApp(); }
+  else { showLogin(); }
+}
+
+supabase.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session) { await loadAllData(); showApp(); }
+  if (event === 'SIGNED_OUT') { meetings = []; clients = []; showLogin(); }
+});
+
+initAuth();
 </script>
 </body>
 </html>

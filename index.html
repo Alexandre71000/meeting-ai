@@ -485,7 +485,7 @@
 <script>
 const SUPABASE_URL = 'https://wjsinbsiprfdatbuhyrb.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_iR2rXSRsMYWmUtrvsNBDmg_ieJHfrAc';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let meetings = [];
 let clients = [];
@@ -855,13 +855,13 @@ async function saveMeeting() {
   const clientName = document.getElementById('rec-client').value || 'Sans client';
   const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Échange', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: document.getElementById('rec-next-action').value, nextDate: document.getElementById('rec-next-date').value, transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
   meetings.unshift(meeting);
-  const { error } = await supabase.from('meetings').insert(meetingToRow(meeting));
+  const { error } = await sb.from('meetings').insert(meetingToRow(meeting));
   if (error) { console.error(error); showToast('Erreur de sauvegarde'); return; }
   localStorage.removeItem('draft');
   if (clientName && clientName !== 'Sans client' && !clients.find(c => c.name.toLowerCase() === clientName.toLowerCase())) {
     const client = { id: Date.now().toString(), name: clientName, contact: '', phone: '', email: '', notes: '', createdAt: new Date().toISOString() };
     clients.push(client);
-    await supabase.from('clients').insert(clientToRow(client));
+    await sb.from('clients').insert(clientToRow(client));
   }
   showToast('Échange sauvegardé ✓');
   resetAll(); showPage('meetings');
@@ -952,8 +952,8 @@ function openMeeting(id) {
   openModal('modal-meeting');
 }
 
-async function saveNotes(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].notes=document.getElementById('notes-'+id).value; await supabase.from('meetings').update({ notes: meetings[idx].notes }).eq('id', id); showToast('Notes sauvegardées ✓'); }
-async function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; await supabase.from('meetings').update({ next_action: meetings[idx].nextAction, next_date: meetings[idx].nextDate }).eq('id', id); renderMeetings(); showToast('Action mise à jour ✓'); }
+async function saveNotes(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].notes=document.getElementById('notes-'+id).value; await sb.from('meetings').update({ notes: meetings[idx].notes }).eq('id', id); showToast('Notes sauvegardées ✓'); }
+async function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; await sb.from('meetings').update({ next_action: meetings[idx].nextAction, next_date: meetings[idx].nextDate }).eq('id', id); renderMeetings(); showToast('Action mise à jour ✓'); }
 function copyMeeting(id) {
   const m = meetings.find(x => x.id === id); if (!m) return;
   const cat = categories.find(c => c.id === m.type);
@@ -965,7 +965,7 @@ function copyMeeting(id) {
   navigator.clipboard.writeText(text).then(() => showToast('Copié ✓'));
 }
 function resendEmail(id) { const m=meetings.find(x=>x.id===id); if(!m)return; showToast('Envoi…'); sendEmailAPI(m).then(()=>showToast('Email envoyé ✓')).catch(()=>showToast('Erreur envoi')); }
-async function deleteMeeting(id) { if(!confirm('Supprimer ?'))return; meetings=meetings.filter(m=>m.id!==id); await supabase.from('meetings').delete().eq('id', id); closeModal('modal-meeting'); renderMeetings(); showToast('Supprimée'); }
+async function deleteMeeting(id) { if(!confirm('Supprimer ?'))return; meetings=meetings.filter(m=>m.id!==id); await sb.from('meetings').delete().eq('id', id); closeModal('modal-meeting'); renderMeetings(); showToast('Supprimée'); }
 
 function renderClients() {
   const list = document.getElementById('clients-list');
@@ -1022,16 +1022,16 @@ async function saveClient() {
   if(editId){
     const idx=clients.findIndex(c=>c.id===editId);
     if(idx!==-1)clients[idx]={...clients[idx],...data};
-    await supabase.from('clients').update(data).eq('id', editId);
+    await sb.from('clients').update(data).eq('id', editId);
   } else {
     const client={id:Date.now().toString(),...data,createdAt:new Date().toISOString()};
     clients.push(client);
-    await supabase.from('clients').insert(clientToRow(client));
+    await sb.from('clients').insert(clientToRow(client));
   }
   closeModal('modal-client'); renderClients(); updateClientSelect(name); showToast(editId?'Client modifié ✓':'Client créé ✓');
 }
 
-async function deleteClient(id) { if(!confirm('Supprimer ?'))return; clients=clients.filter(c=>c.id!==id); await supabase.from('clients').delete().eq('id', id); closeModal('modal-meeting'); renderClients(); updateClientSelect(); showToast('Client supprimé'); }
+async function deleteClient(id) { if(!confirm('Supprimer ?'))return; clients=clients.filter(c=>c.id!==id); await sb.from('clients').delete().eq('id', id); closeModal('modal-meeting'); renderClients(); updateClientSelect(); showToast('Client supprimé'); }
 function updateStatus(state,msg) { document.getElementById('status-dot').className='dot '+state; document.getElementById('status-text').textContent=msg; }
 
 function updateHero() {
@@ -1239,7 +1239,7 @@ async function addCategory() {
   const id = 'custom-' + Date.now().toString();
   const cat = { id, label: 'Nouvelle catégorie', prompt: '', fixed: false };
   categories.push(cat);
-  await supabase.from('categories').insert(cat);
+  await sb.from('categories').insert(cat);
   expandedCategoryId = id;
   renderCategories();
   updateTypeSelect();
@@ -1252,7 +1252,7 @@ async function saveCategoryEdit(id) {
     if (name) cat.label = name;
   }
   cat.prompt = document.getElementById('cat-prompt-' + id).value;
-  await supabase.from('categories').update({ label: cat.label, prompt: cat.prompt }).eq('id', id);
+  await sb.from('categories').update({ label: cat.label, prompt: cat.prompt }).eq('id', id);
   renderCategories();
   updateTypeSelect();
   showToast('Catégorie enregistrée ✓');
@@ -1268,7 +1268,7 @@ async function deleteCategory(id) {
   if (!cat || cat.fixed) return;
   if (!confirm('Supprimer cette catégorie ?')) return;
   categories = categories.filter(c => c.id !== id);
-  await supabase.from('categories').delete().eq('id', id);
+  await sb.from('categories').delete().eq('id', id);
   expandedCategoryId = null;
   renderCategories();
   updateTypeSelect();
@@ -1361,8 +1361,8 @@ async function sendMagicLink() {
     const email = document.getElementById('login-email').value.trim();
     if (!email) { statusEl.textContent = 'Entre ton email.'; return; }
     statusEl.textContent = 'Envoi en cours…';
-    if (typeof supabase === 'undefined' || !supabase?.auth) { statusEl.textContent = "Erreur : le service de connexion n'a pas pu charger. Vérifie ta connexion internet et recharge la page."; return; }
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
+    if (typeof sb === 'undefined' || !sb?.auth) { statusEl.textContent = "Erreur : le service de connexion n'a pas pu charger. Vérifie ta connexion internet et recharge la page."; return; }
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
     statusEl.textContent = error ? 'Erreur : ' + error.message : 'Lien envoyé ! Vérifie ta boîte mail.';
   } catch (e) {
     statusEl.textContent = 'Erreur inattendue : ' + e.message;
@@ -1375,8 +1375,8 @@ async function maybeMigrateLocalData() {
   if (!localMeetings.length && !localClients.length) return;
   if (meetings.length || clients.length) return;
   if (!confirm(`Des données existantes ont été trouvées sur cet appareil (${localMeetings.length} échange(s), ${localClients.length} client(s)). Les importer dans ton compte ?`)) return;
-  for (const c of localClients) await supabase.from('clients').insert(clientToRow(c));
-  for (const m of localMeetings) await supabase.from('meetings').insert(meetingToRow(m));
+  for (const c of localClients) await sb.from('clients').insert(clientToRow(c));
+  for (const m of localMeetings) await sb.from('meetings').insert(meetingToRow(m));
   clients = localClients;
   meetings = localMeetings;
   localStorage.removeItem('meetings');
@@ -1386,9 +1386,9 @@ async function maybeMigrateLocalData() {
 
 async function loadAllData() {
   const [{ data: meetingRows }, { data: clientRows }, { data: categoryRows }] = await Promise.all([
-    supabase.from('meetings').select('*').order('date', { ascending: false }),
-    supabase.from('clients').select('*'),
-    supabase.from('categories').select('*')
+    sb.from('meetings').select('*').order('date', { ascending: false }),
+    sb.from('clients').select('*'),
+    sb.from('categories').select('*')
   ]);
   meetings = (meetingRows || []).map(rowToMeeting);
   clients = (clientRows || []).map(rowToClient);
@@ -1397,7 +1397,7 @@ async function loadAllData() {
     categories = categoryRows.map(r => ({ id: r.id, label: r.label, prompt: r.prompt, fixed: r.fixed }));
   } else {
     categories = DEFAULT_CATEGORIES.map(c => ({...c}));
-    await supabase.from('categories').insert(categories);
+    await sb.from('categories').insert(categories);
   }
 
   await maybeMigrateLocalData();
@@ -1409,12 +1409,12 @@ async function loadAllData() {
 }
 
 async function initAuth() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
   if (session) { await loadAllData(); showApp(); }
   else { showLogin(); }
 }
 
-supabase.auth.onAuthStateChange(async (event, session) => {
+sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) { await loadAllData(); showApp(); }
   if (event === 'SIGNED_OUT') { meetings = []; clients = []; showLogin(); }
 });

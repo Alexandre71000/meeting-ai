@@ -88,6 +88,7 @@ Sois concis dans le texte transcrit pour t'assurer que le JSON reste complet et 
     }
 
     if (!entries.length) {
+      console.error('OCR found no entries. Raw model output:', rawContent);
       return res.status(200).json({ error: 'Aucun texte lisible détecté sur la photo.' });
     }
 

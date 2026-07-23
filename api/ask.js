@@ -34,9 +34,9 @@ Consignes :
         'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 500,
+        max_tokens: 400,
         temperature: 0.2
       })
     });
@@ -45,6 +45,9 @@ Consignes :
 
     if (!groqRes.ok) {
       console.error('Groq error:', JSON.stringify(data));
+      if (groqRes.status === 429) {
+        return res.status(429).json({ error: "Trop de questions d'un coup, attends quelques secondes avant de réessayer." });
+      }
       return res.status(500).json({ error: data?.error?.message || 'Erreur Groq' });
     }
 

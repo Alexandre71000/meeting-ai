@@ -269,11 +269,18 @@
       <div class="logo-icon"><i class="ti ti-microphone"></i></div>
       <div style="font-weight:700;font-size:18px">MeetingAI</div>
     </div>
-    <div class="field" style="margin-bottom:12px">
+    <div class="field" style="margin-bottom:12px" id="login-email-field">
       <label>Adresse email</label>
       <input type="email" id="login-email" placeholder="toi@exemple.fr" />
     </div>
-    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="sendMagicLink()"><i class="ti ti-mail"></i> Recevoir un lien de connexion</button>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="sendMagicLink()" id="btn-send-code"><i class="ti ti-mail"></i> Recevoir un code de connexion</button>
+    <div id="otp-section" style="display:none;margin-top:14px">
+      <div class="field" style="margin-bottom:12px">
+        <label>Code reçu par email (6 chiffres)</label>
+        <input type="text" id="login-otp" placeholder="123456" inputmode="numeric" maxlength="6" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="verifyCode()"><i class="ti ti-check"></i> Valider le code</button>
+    </div>
     <p id="login-status" style="font-size:13px;color:var(--text2);margin-top:12px"></p>
   </div>
 </div>
@@ -1363,7 +1370,25 @@ async function sendMagicLink() {
     statusEl.textContent = 'Envoi en cours…';
     if (typeof sb === 'undefined' || !sb?.auth) { statusEl.textContent = "Erreur : le service de connexion n'a pas pu charger. Vérifie ta connexion internet et recharge la page."; return; }
     const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
-    statusEl.textContent = error ? 'Erreur : ' + error.message : 'Lien envoyé ! Vérifie ta boîte mail.';
+    if (error) { statusEl.textContent = 'Erreur : ' + error.message; return; }
+    statusEl.textContent = 'Code envoyé ! Vérifie ta boîte mail et entre le code ci-dessous (ou clique le lien reçu).';
+    document.getElementById('otp-section').style.display = 'block';
+    document.getElementById('login-otp').focus();
+  } catch (e) {
+    statusEl.textContent = 'Erreur inattendue : ' + e.message;
+  }
+}
+
+async function verifyCode() {
+  const statusEl = document.getElementById('login-status');
+  try {
+    const email = document.getElementById('login-email').value.trim();
+    const token = document.getElementById('login-otp').value.trim();
+    if (!token) { statusEl.textContent = 'Entre le code reçu par email.'; return; }
+    statusEl.textContent = 'Vérification…';
+    const { error } = await sb.auth.verifyOtp({ email, token, type: 'email' });
+    if (error) { statusEl.textContent = 'Erreur : ' + error.message; return; }
+    statusEl.textContent = 'Connecté ✓';
   } catch (e) {
     statusEl.textContent = 'Erreur inattendue : ' + e.message;
   }

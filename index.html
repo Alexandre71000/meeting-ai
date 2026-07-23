@@ -390,6 +390,17 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-ocr-choice" onclick="closeModal('modal-ocr-choice')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:520px;margin:0 auto">
+    <div class="modal-header">
+      <span class="modal-title">Plusieurs clients détectés</span>
+      <button class="modal-close" onclick="closeModal('modal-ocr-choice')"><i class="ti ti-x"></i></button>
+    </div>
+    <p style="font-size:13px;color:var(--text2);margin:0 0 12px">La photo contient plusieurs clients. Choisis lequel ajouter à cette réunion :</p>
+    <div id="ocr-choice-list"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-client" onclick="closeModal('modal-client')">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:680px;margin:0 auto">
     <div class="modal-header">
@@ -640,7 +651,7 @@ function resizeImageForUpload(file) {
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      const maxDim = 1600;
+      const maxDim = 2200;
       let { width, height } = img;
       if (width > maxDim || height > maxDim) {
         const scale = maxDim / Math.max(width, height);
@@ -658,6 +669,8 @@ function resizeImageForUpload(file) {
   });
 }
 
+let pendingOcrEntries = [];
+
 async function handlePhotoSelected(event) {
   const file = event.target.files[0];
   event.target.value = '';
@@ -670,10 +683,12 @@ async function handlePhotoSelected(event) {
     const blob = await resizeImageForUpload(file);
     const res = await fetch('/api/ocr', { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: blob });
     const data = await res.json();
-    if (res.ok && data.text && data.text.trim()) {
-      finalTranscript += data.text.trim() + ' ';
+    if (res.ok && Array.isArray(data.entries) && data.entries.length === 1) {
+      finalTranscript += data.entries[0].text.trim() + ' ';
       updateTranscript();
       showToast('Texte de la photo ajouté ✓');
+    } else if (res.ok && Array.isArray(data.entries) && data.entries.length > 1) {
+      showOcrChoiceModal(data.entries);
     } else {
       showToast(data.error || 'Aucun texte détecté sur la photo');
     }
@@ -682,6 +697,30 @@ async function handlePhotoSelected(event) {
   }
   btn.disabled = false;
   btn.innerHTML = originalLabel;
+}
+
+function showOcrChoiceModal(entries) {
+  pendingOcrEntries = entries;
+  document.getElementById('ocr-choice-list').innerHTML = entries.map((e, i) => `
+    <div class="meeting-item" onclick="selectOcrEntry(${i})">
+      <div class="meeting-icon"><i class="ti ti-building-store"></i></div>
+      <div class="meeting-info">
+        <div class="meeting-title-text">${escapeHtml(e.client || 'Client non identifié')}</div>
+        <div class="meeting-meta">${escapeHtml(e.text.slice(0, 80))}${e.text.length > 80 ? '…' : ''}</div>
+      </div>
+      <i class="ti ti-chevron-right meeting-chev"></i>
+    </div>`).join('');
+  openModal('modal-ocr-choice');
+}
+
+function selectOcrEntry(index) {
+  const entry = pendingOcrEntries[index];
+  if (!entry) return;
+  finalTranscript += entry.text.trim() + ' ';
+  updateTranscript();
+  closeModal('modal-ocr-choice');
+  showToast('Texte de la photo ajouté ✓');
+  pendingOcrEntries = [];
 }
 
 function updateTranscript() {

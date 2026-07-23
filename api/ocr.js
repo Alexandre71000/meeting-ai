@@ -11,6 +11,24 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Image vide' });
   }
 
+  const prompt = `Tu analyses une photo de notes manuscrites prises par un technico-commercial pendant ses rendez-vous clients.
+
+Consignes importantes :
+- Ne transcris QUE ce que tu peux lire avec une réelle confiance. Si un mot précis est illisible, écris [illisible] à sa place plutôt que d'inventer un mot plausible. N'invente jamais de nom, de chiffre ou de date que tu ne peux pas lire clairement.
+- Les notes peuvent concerner UN SEUL client, ou PLUSIEURS clients différents sur la même page (souvent organisées avec le nom de l'entreprise/du client à gauche et le texte associé à côté ou en dessous). Repère chaque section clairement associée à un nom d'entreprise ou de client différent.
+- Si tu identifies plusieurs clients distincts sur la photo, crée une entrée séparée par client, avec uniquement le texte qui lui correspond.
+- Si la page ne concerne qu'un seul client, ou n'a pas de structure par client identifiable, retourne une seule entrée avec "client" laissé vide.
+- Ignore l'arrière-plan, la table, les mains ou tout élément qui n'est pas du texte manuscrit.
+
+Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code) au format :
+{
+  "entries": [
+    { "client": "Nom de l'entreprise/client, ou chaîne vide si non identifiable", "text": "Texte transcrit correspondant à ce client" }
+  ]
+}
+
+Si aucun texte manuscrit lisible n'est visible sur la photo, réponds : {"entries": []}`;
+
   try {
     const contentType = req.headers['content-type'] || 'image/jpeg';
     const dataUrl = `data:${contentType};base64,${buffer.toString('base64')}`;
@@ -26,13 +44,14 @@ export default async function handler(req, res) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: "Transcris fidèlement tout le texte manuscrit visible sur cette photo de notes de réunion, en français. Ignore l'arrière-plan, la table, les mains ou tout autre élément visuel. Réponds UNIQUEMENT avec le texte transcrit, sans commentaire, sans introduction, sans mise en forme markdown. Si aucun texte lisible n'est visible, réponds exactement : AUCUN_TEXTE." }
-            , { type: 'image_url', image_url: { url: dataUrl } }
+            { type: 'text', text: prompt },
+            { type: 'image_url', image_url: { url: dataUrl } }
           ]
         }],
-        max_completion_tokens: 1024,
-        temperature: 0.2,
-        reasoning_format: 'hidden'
+        max_completion_tokens: 1536,
+        temperature: 0.1,
+        reasoning_format: 'hidden',
+        response_format: { type: 'json_object' }
       })
     });
 
@@ -47,13 +66,28 @@ export default async function handler(req, res) {
     }
 
     const rawContent = data?.choices?.[0]?.message?.content || '';
-    const text = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+    const cleaned = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
-    if (!text || text === 'AUCUN_TEXTE') {
+    let entries = [];
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (Array.isArray(parsed.entries)) entries = parsed.entries.filter(e => e && e.text && e.text.trim());
+      } catch {
+        // fall through, entries stays []
+      }
+    }
+
+    if (!entries.length && cleaned && !jsonMatch) {
+      entries = [{ client: '', text: cleaned }];
+    }
+
+    if (!entries.length) {
       return res.status(200).json({ error: 'Aucun texte lisible détecté sur la photo.' });
     }
 
-    return res.status(200).json({ text });
+    return res.status(200).json({ entries });
 
   } catch (e) {
     console.error('Handler error:', e);

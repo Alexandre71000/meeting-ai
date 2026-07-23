@@ -31,7 +31,8 @@ export default async function handler(req, res) {
           ]
         }],
         max_completion_tokens: 1024,
-        temperature: 0.2
+        temperature: 0.2,
+        reasoning_format: 'hidden'
       })
     });
 
@@ -45,7 +46,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: data?.error?.message || 'Erreur Groq' });
     }
 
-    const text = data?.choices?.[0]?.message?.content?.trim() || '';
+    const rawContent = data?.choices?.[0]?.message?.content || '';
+    const text = rawContent.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
 
     if (!text || text === 'AUCUN_TEXTE') {
       return res.status(200).json({ error: 'Aucun texte lisible détecté sur la photo.' });

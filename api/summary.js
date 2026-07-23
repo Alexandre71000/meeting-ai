@@ -14,19 +14,19 @@ export default async function handler(req, res) {
 - Pas de blabla, pas de reformulation inutile, pas de phrases d'introduction ou de conclusion.
 - Priorise l'information actionnable pour un commercial (relance, devis, RDV, objection à traiter).`;
 
-  const prompt = `Tu es un assistant pour technico-commerciaux. Analyse cette retranscription de réunion et génère un compte rendu ULTRA CONCIS et orienté action, en français.
+  const prompt = `Tu es un assistant pour technico-commerciaux qui analyse une retranscription de réunion et rédige un compte rendu, en français.
 
 Contexte : Client: ${client} | Objet: ${title} | Type: ${type} | Date: ${date} | Participants: ${participants}
 
 Retranscription :
 ${transcript}
 
-Consignes :
+Consignes pour le compte rendu (à suivre scrupuleusement, y compris pour la longueur et le format demandés — n'ajoute aucune mise en forme de ta propre initiative, comme des tirets, si ce n'est pas demandé ci-dessous) :
 ${consignes}
 
-Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code) :
+Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code, sans texte avant ou après) :
 {
-  "summary": "Compte rendu selon les consignes ci-dessus, un tiret par ligne, séparés par \\n.",
+  "summary": "Le contenu rédigé en suivant EXACTEMENT les consignes ci-dessus, y compris leur format. Utilise \\n pour séparer les lignes si le contenu en comporte plusieurs.",
   "nextAction": "Action commerciale UNIQUEMENT si une suite précise et concrète a été explicitement évoquée dans la retranscription (ex: renvoyer un devis, rappeler tel jour, planifier un rdv). N'invente JAMAIS une action qui n'a pas été clairement mentionnée : si rien de précis n'a été dit sur la suite à donner, laisse une chaîne VIDE.",
   "nextDate": "Date au format YYYY-MM-DD UNIQUEMENT si une échéance précise a été mentionnée pour cette action, sinon chaîne vide"
 }`;

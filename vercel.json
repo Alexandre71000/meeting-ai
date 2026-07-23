@@ -4,6 +4,7 @@
     "api/summary.js": { "maxDuration": 60 },
     "api/sendemail.js": { "maxDuration": 30 },
     "api/transcribe.js": { "maxDuration": 30 },
-    "api/ask.js": { "maxDuration": 30 }
+    "api/ask.js": { "maxDuration": 30 },
+    "api/ocr.js": { "maxDuration": 30 }
   }
 }

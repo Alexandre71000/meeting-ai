@@ -194,15 +194,18 @@
     .word-badge { font-size: 12px; color: var(--text3); padding: 2px 10px; background: var(--bg3); border-radius: 20px; }
     .summary-text { font-size: 13.5px; line-height: 1.8; color: var(--text2); white-space: pre-wrap; }
     .summary-text.loading { color: var(--text3); font-style: italic; }
-    .action-row { display: flex; gap: 8px; align-items: center; margin-top: 1rem; padding: 10px 12px; background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius-md); flex-wrap: wrap; }
-    .action-row i { color: var(--amber); font-size: 16px; flex-shrink: 0; }
-    .action-row input { flex: 2; min-width: 120px; padding: 8px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
-    .action-row input:focus { border-color: var(--amber); }
-    .action-row input[type=date] { flex: 1; min-width: 120px; color: var(--text2); }
-    .action-row input::placeholder { color: var(--text3); }
-    .action-row.validated { background: var(--teal-bg); border-color: var(--teal); }
-    .action-row.validated i { color: var(--teal); }
-    .action-row.validated #btn-validate-action { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .action-card { margin-top: 1rem; padding: 12px 14px; background: var(--amber-bg); border: 1px solid var(--amber); border-radius: var(--radius-md); }
+    .action-card .action-title-row { display: flex; align-items: center; gap: 8px; }
+    .action-card .action-title-row i { color: var(--amber); font-size: 16px; flex-shrink: 0; }
+    .action-card .action-title-row input[type=text] { width: 100%; padding: 8px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 13.5px; font-weight: 600; font-family: inherit; outline: none; }
+    .action-card input:focus, .action-card textarea:focus { border-color: var(--amber); }
+    .action-card input::placeholder, .action-card textarea::placeholder { color: var(--text3); }
+    .action-card .action-meta-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+    .action-card input[type=date] { flex: 1; min-width: 120px; padding: 8px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-size: 13px; font-family: inherit; outline: none; }
+    .action-card textarea { width: 100%; margin-top: 8px; padding: 8px 12px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 12.5px; font-family: inherit; min-height: 60px; resize: vertical; outline: none; }
+    .action-card.validated { background: var(--teal-bg); border-color: var(--teal); }
+    .action-card.validated .action-title-row i { color: var(--teal); }
+    .action-card.validated #btn-validate-action { background: var(--teal); border-color: var(--teal); color: #fff; }
     .error-box { background: var(--danger-bg); border: 1px solid var(--danger-border); border-radius: var(--radius-md); padding: 12px; display: flex; align-items: center; gap: 10px; }
     .error-box span { font-size: 13px; color: var(--danger-text); flex: 1; }
     .meeting-item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: all 0.1s; }
@@ -373,14 +376,16 @@
           </div>
         </div>
         <div id="summary-box" contenteditable="true"></div>
-        <div id="action-block" style="display:none">
-          <div class="action-row" id="action-row">
+        <div id="action-block" class="action-card" style="display:none">
+          <div class="action-title-row">
             <i class="ti ti-arrow-right"></i>
             <input type="text" id="rec-next-action" placeholder="Prochaine action…" oninput="onActionFieldEdit()" />
-            <input type="date" id="rec-next-date" oninput="onActionFieldEdit()" />
-            <button class="btn btn-sm" id="btn-validate-action" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="validateAction()" title="Valider cette action"><i class="ti ti-check"></i></button>
           </div>
-          <textarea id="rec-action-details" placeholder="Détail de l'action (un point par ligne, ex: envoyer le devis / envoyer la fiche technique)…" oninput="onActionFieldEdit()" style="display:none;width:100%;margin-top:8px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:12.5px;font-family:inherit;min-height:60px;resize:vertical;outline:none"></textarea>
+          <div class="action-meta-row">
+            <input type="date" id="rec-next-date" oninput="onActionFieldEdit()" />
+            <button class="btn btn-sm" id="btn-validate-action" onclick="validateAction()" title="Valider cette action"><i class="ti ti-check"></i></button>
+          </div>
+          <textarea id="rec-action-details" placeholder="Détail de l'action (un point par ligne, ex: envoyer le devis / envoyer la fiche technique)…" oninput="onActionFieldEdit()" style="display:none"></textarea>
         </div>
       </div>
     </div>
@@ -828,7 +833,7 @@ async function generateSummary() {
 
   document.getElementById('summary-card').style.display = 'block';
   document.getElementById('action-block').style.display = 'none';
-  document.getElementById('action-row').classList.remove('validated');
+  document.getElementById('action-block').classList.remove('validated');
   document.getElementById('rec-action-details').style.display = 'none';
   actionValidated = false;
   const box = document.getElementById('summary-box');
@@ -985,13 +990,17 @@ function openMeeting(id) {
     ${m.summary ? `<div class="detail-section"><div class="detail-label">Compte rendu</div><div class="detail-content">${formatSummaryHtml(m.summary)}</div></div>` : ''}
     <div class="detail-section">
       <div class="detail-label">Prochaine action</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <i class="ti ti-arrow-right" style="color:var(--amber);font-size:16px;flex-shrink:0"></i>
-        <input type="text" id="edit-action-${id}" value="${m.nextAction||''}" placeholder="Action à faire" style="flex:2;min-width:120px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:13px;font-family:inherit;outline:none" />
-        <input type="date" id="edit-date-${id}" value="${m.nextDate||''}" style="flex:1;min-width:120px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text2);font-size:13px;font-family:inherit;outline:none" />
-        <button class="btn btn-sm btn-primary" onclick="saveNextAction('${id}')"><i class="ti ti-check"></i></button>
+      <div class="action-card">
+        <div class="action-title-row">
+          <i class="ti ti-arrow-right"></i>
+          <input type="text" id="edit-action-${id}" value="${m.nextAction||''}" placeholder="Action à faire" />
+        </div>
+        <div class="action-meta-row">
+          <input type="date" id="edit-date-${id}" value="${m.nextDate||''}" />
+          <button class="btn btn-sm btn-primary" onclick="saveNextAction('${id}')"><i class="ti ti-check"></i></button>
+        </div>
+        <textarea id="edit-action-details-${id}" placeholder="Détail de l'action (un point par ligne)…">${escapeHtml(m.actionDetails||'')}</textarea>
       </div>
-      <textarea id="edit-action-details-${id}" placeholder="Détail de l'action (un point par ligne)…" style="width:100%;margin-top:8px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:12.5px;font-family:inherit;min-height:60px;resize:vertical;outline:none">${escapeHtml(m.actionDetails||'')}</textarea>
     </div>
     <div class="detail-section">
       <div class="detail-label">Notes post-échange</div>
@@ -1165,7 +1174,7 @@ function updateHero() {
 
 function onActionFieldEdit() {
   actionValidated = false;
-  document.getElementById('action-row').classList.remove('validated');
+  document.getElementById('action-block').classList.remove('validated');
   updateHero();
 }
 
@@ -1173,7 +1182,7 @@ function validateAction() {
   const action = document.getElementById('rec-next-action').value.trim();
   if (!action) { showToast('Décrivez une action avant de valider'); return; }
   actionValidated = true;
-  document.getElementById('action-row').classList.add('validated');
+  document.getElementById('action-block').classList.add('validated');
   updateHero();
   showToast('Action validée ✓');
 }
@@ -1452,7 +1461,7 @@ function resetAll() {
   document.getElementById('rec-next-action').value='';
   document.getElementById('rec-next-date').value='';
   document.getElementById('rec-action-details').value='';
-  document.getElementById('action-row').classList.remove('validated');
+  document.getElementById('action-block').classList.remove('validated');
   document.getElementById('action-block').style.display='none';
   actionValidated = false;
   document.getElementById('hero-strip').classList.remove('show');

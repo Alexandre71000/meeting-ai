@@ -10,6 +10,7 @@ create table meetings (
   type text,
   next_action text,
   next_date text,
+  action_details text,
   transcript text,
   summary text,
   notes text,
@@ -32,6 +33,10 @@ create table clients (
 -- Si la table "clients" existe déjà (projet Supabase créé avant l'ajout des contacts multiples),
 -- exécuter cette ligne seule dans le SQL Editor pour ajouter la colonne sans perdre de données :
 -- alter table clients add column if not exists contacts jsonb default '[]'::jsonb;
+
+-- Si la table "meetings" existe déjà (projet Supabase créé avant l'ajout du détail d'action),
+-- exécuter cette ligne seule dans le SQL Editor pour ajouter la colonne sans perdre de données :
+-- alter table meetings add column if not exists action_details text;
 
 create table categories (
   id text primary key,

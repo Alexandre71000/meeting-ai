@@ -24,11 +24,12 @@ ${transcript}
 Consignes pour le compte rendu (à suivre scrupuleusement, y compris pour la longueur et le format demandés — n'ajoute aucune mise en forme de ta propre initiative, comme des tirets, si ce n'est pas demandé ci-dessous) :
 ${consignes}
 
-Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code, sans texte avant ou après) :
+Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code, sans texte avant ou après), avec les clés DANS CET ORDRE :
 {
-  "summary": "Le contenu rédigé en suivant EXACTEMENT les consignes ci-dessus, y compris leur format. Utilise \\n pour séparer les lignes si le contenu en comporte plusieurs.",
-  "nextAction": "Action commerciale UNIQUEMENT si une suite précise et concrète a été explicitement évoquée dans la retranscription (ex: renvoyer un devis, rappeler tel jour, planifier un rdv). N'invente JAMAIS une action qui n'a pas été clairement mentionnée : si rien de précis n'a été dit sur la suite à donner, laisse une chaîne VIDE.",
-  "nextDate": "Date au format YYYY-MM-DD UNIQUEMENT si une échéance précise a été mentionnée pour cette action, sinon chaîne vide"
+  "nextAction": "Titre court (une phrase) de l'action commerciale UNIQUEMENT si une suite précise et concrète a été explicitement évoquée dans la retranscription (ex: renvoyer un devis, rappeler tel jour, planifier un rdv). N'invente JAMAIS une action qui n'a pas été clairement mentionnée : si rien de précis n'a été dit sur la suite à donner, laisse une chaîne VIDE.",
+  "nextDate": "Date au format YYYY-MM-DD UNIQUEMENT si une échéance précise a été mentionnée pour cette action, sinon chaîne vide",
+  "actionDetails": "UNIQUEMENT si l'action comporte plusieurs éléments distincts à faire (ex: envoyer un devis ET une fiche technique ET rappeler), liste chaque élément sur sa propre ligne avec un tiret '- ' devant, séparés par \\n. Si l'action tient en une seule chose déjà dite dans nextAction, laisse une chaîne VIDE.",
+  "summary": "Le contenu rédigé en suivant EXACTEMENT les consignes ci-dessus, y compris leur format. Utilise \\n pour séparer les lignes si le contenu en comporte plusieurs."
 }`;
 
   try {
@@ -41,7 +42,7 @@ Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code, sa
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 600,
+        max_tokens: 1200,
         temperature: 0.2,
         response_format: { type: 'json_object' }
       })
@@ -67,14 +68,23 @@ Réponds UNIQUEMENT avec un JSON valide (sans markdown, sans balises de code, sa
         return res.status(200).json({
           summary: (parsed.summary || text).replace(/\\n/g, '\n'),
           nextAction: parsed.nextAction || '',
-          nextDate: parsed.nextDate || ''
+          nextDate: parsed.nextDate || '',
+          actionDetails: (parsed.actionDetails || '').replace(/\\n/g, '\n')
         });
       } catch {
-        return res.status(200).json({ summary: text, nextAction: '', nextDate: '' });
+        // JSON possibly truncated (long summary hit max_tokens) — nextAction/nextDate/actionDetails
+        // come first in field order, so try to salvage them even if summary got cut off.
+        const grab = (key) => (text.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`)) || [])[1] || '';
+        return res.status(200).json({
+          summary: text,
+          nextAction: grab('nextAction'),
+          nextDate: grab('nextDate'),
+          actionDetails: grab('actionDetails').replace(/\\n/g, '\n')
+        });
       }
     }
 
-    return res.status(200).json({ summary: text, nextAction: '', nextDate: '' });
+    return res.status(200).json({ summary: text, nextAction: '', nextDate: '', actionDetails: '' });
 
   } catch (e) {
     console.error('Handler error:', e);

@@ -373,11 +373,14 @@
           </div>
         </div>
         <div id="summary-box" contenteditable="true"></div>
-        <div class="action-row" id="action-row" style="display:none">
-          <i class="ti ti-arrow-right"></i>
-          <input type="text" id="rec-next-action" placeholder="Prochaine action…" oninput="onActionFieldEdit()" />
-          <input type="date" id="rec-next-date" oninput="onActionFieldEdit()" />
-          <button class="btn btn-sm" id="btn-validate-action" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="validateAction()" title="Valider cette action"><i class="ti ti-check"></i></button>
+        <div id="action-block" style="display:none">
+          <div class="action-row" id="action-row">
+            <i class="ti ti-arrow-right"></i>
+            <input type="text" id="rec-next-action" placeholder="Prochaine action…" oninput="onActionFieldEdit()" />
+            <input type="date" id="rec-next-date" oninput="onActionFieldEdit()" />
+            <button class="btn btn-sm" id="btn-validate-action" style="background:var(--amber-bg);border-color:var(--amber);color:var(--amber)" onclick="validateAction()" title="Valider cette action"><i class="ti ti-check"></i></button>
+          </div>
+          <textarea id="rec-action-details" placeholder="Détail de l'action (un point par ligne, ex: envoyer le devis / envoyer la fiche technique)…" oninput="onActionFieldEdit()" style="display:none;width:100%;margin-top:8px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:12.5px;font-family:inherit;min-height:60px;resize:vertical;outline:none"></textarea>
         </div>
       </div>
     </div>
@@ -801,7 +804,7 @@ function showError(message) {
     <span>${message}</span>
     <button class="btn btn-sm" onclick="generateSummary()"><i class="ti ti-refresh"></i> Réessayer</button>
   </div>`;
-  document.getElementById('action-row').style.display = 'none';
+  document.getElementById('action-block').style.display = 'none';
   document.getElementById('btn-summary').disabled = false;
 }
 
@@ -824,8 +827,9 @@ async function generateSummary() {
   const date = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
   document.getElementById('summary-card').style.display = 'block';
-  document.getElementById('action-row').style.display = 'none';
+  document.getElementById('action-block').style.display = 'none';
   document.getElementById('action-row').classList.remove('validated');
+  document.getElementById('rec-action-details').style.display = 'none';
   actionValidated = false;
   const box = document.getElementById('summary-box');
   box.className = 'summary-text loading';
@@ -856,11 +860,15 @@ async function generateSummary() {
     if (data.nextAction) {
       document.getElementById('rec-next-action').value = data.nextAction;
       document.getElementById('rec-next-date').value = data.nextDate || '';
-      document.getElementById('action-row').style.display = 'flex';
+      document.getElementById('action-block').style.display = 'block';
+      const detailsEl = document.getElementById('rec-action-details');
+      if (data.actionDetails) { detailsEl.value = data.actionDetails; detailsEl.style.display = 'block'; }
+      else { detailsEl.value = ''; detailsEl.style.display = 'none'; }
     } else {
       document.getElementById('rec-next-action').value = '';
       document.getElementById('rec-next-date').value = '';
-      document.getElementById('action-row').style.display = 'none';
+      document.getElementById('rec-action-details').value = '';
+      document.getElementById('action-block').style.display = 'none';
     }
     updateHero();
 
@@ -878,13 +886,13 @@ function sendEmailAPI(meeting) {
 function sendCurrentEmail() {
   const summary = document.getElementById('summary-box').innerText || '';
   if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
-  const meeting = { title: document.getElementById('rec-title').value || 'Échange', client: document.getElementById('rec-client').value || 'Non renseigné', date: new Date().toISOString(), participants: document.getElementById('rec-participants').value, summary, nextAction: actionValidated ? document.getElementById('rec-next-action').value : '', nextDate: actionValidated ? document.getElementById('rec-next-date').value : '' };
+  const meeting = { title: document.getElementById('rec-title').value || 'Échange', client: document.getElementById('rec-client').value || 'Non renseigné', date: new Date().toISOString(), participants: document.getElementById('rec-participants').value, summary, nextAction: actionValidated ? document.getElementById('rec-next-action').value : '', nextDate: actionValidated ? document.getElementById('rec-next-date').value : '', actionDetails: actionValidated ? document.getElementById('rec-action-details').value : '' };
   showToast('Envoi…');
   sendEmailAPI(meeting).then(() => showToast('Email envoyé ✓')).catch(() => showToast('Erreur envoi'));
 }
 
-function meetingToRow(m) { return { id: m.id, client: m.client, title: m.title, participants: m.participants, type: m.type, next_action: m.nextAction, next_date: m.nextDate, transcript: m.transcript, summary: m.summary, notes: m.notes, duration: m.duration, date: m.date }; }
-function rowToMeeting(r) { return { id: r.id, client: r.client, title: r.title, participants: r.participants, type: r.type, nextAction: r.next_action, nextDate: r.next_date, transcript: r.transcript, summary: r.summary, notes: r.notes, duration: r.duration, date: r.date }; }
+function meetingToRow(m) { return { id: m.id, client: m.client, title: m.title, participants: m.participants, type: m.type, next_action: m.nextAction, next_date: m.nextDate, action_details: m.actionDetails, transcript: m.transcript, summary: m.summary, notes: m.notes, duration: m.duration, date: m.date }; }
+function rowToMeeting(r) { return { id: r.id, client: r.client, title: r.title, participants: r.participants, type: r.type, nextAction: r.next_action, nextDate: r.next_date, actionDetails: r.action_details, transcript: r.transcript, summary: r.summary, notes: r.notes, duration: r.duration, date: r.date }; }
 function clientToRow(c) { return { id: c.id, name: c.name, contact: '', phone: '', email: '', notes: c.notes, contacts: c.contacts || [], created_at: c.createdAt }; }
 function rowToClient(r) {
   let contacts = Array.isArray(r.contacts) ? r.contacts : [];
@@ -899,7 +907,7 @@ async function saveMeeting() {
   const summary = summaryEl.innerText || '';
   if (!summary || summary.length < 5) { showToast('Générez d\'abord le compte rendu'); return; }
   const clientName = document.getElementById('rec-client').value || 'Sans client';
-  const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Échange', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: actionValidated ? document.getElementById('rec-next-action').value : '', nextDate: actionValidated ? document.getElementById('rec-next-date').value : '', transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
+  const meeting = { id: Date.now().toString(), client: clientName, title: document.getElementById('rec-title').value || 'Échange', participants: document.getElementById('rec-participants').value, type: document.getElementById('rec-type').value, nextAction: actionValidated ? document.getElementById('rec-next-action').value : '', nextDate: actionValidated ? document.getElementById('rec-next-date').value : '', actionDetails: actionValidated ? document.getElementById('rec-action-details').value : '', transcript: finalTranscript, summary, notes: '', duration: seconds, date: new Date().toISOString() };
   meetings.unshift(meeting);
   const { error } = await sb.from('meetings').insert(meetingToRow(meeting));
   if (error) { console.error(error); showToast('Erreur de sauvegarde'); return; }
@@ -983,6 +991,7 @@ function openMeeting(id) {
         <input type="date" id="edit-date-${id}" value="${m.nextDate||''}" style="flex:1;min-width:120px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text2);font-size:13px;font-family:inherit;outline:none" />
         <button class="btn btn-sm btn-primary" onclick="saveNextAction('${id}')"><i class="ti ti-check"></i></button>
       </div>
+      <textarea id="edit-action-details-${id}" placeholder="Détail de l'action (un point par ligne)…" style="width:100%;margin-top:8px;padding:8px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-md);color:var(--text);font-size:12.5px;font-family:inherit;min-height:60px;resize:vertical;outline:none">${escapeHtml(m.actionDetails||'')}</textarea>
     </div>
     <div class="detail-section">
       <div class="detail-label">Notes post-échange</div>
@@ -999,7 +1008,7 @@ function openMeeting(id) {
 }
 
 async function saveNotes(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].notes=document.getElementById('notes-'+id).value; await sb.from('meetings').update({ notes: meetings[idx].notes }).eq('id', id); showToast('Notes sauvegardées ✓'); }
-async function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; await sb.from('meetings').update({ next_action: meetings[idx].nextAction, next_date: meetings[idx].nextDate }).eq('id', id); renderMeetings(); showToast('Action mise à jour ✓'); }
+async function saveNextAction(id) { const idx=meetings.findIndex(m=>m.id===id); if(idx===-1)return; meetings[idx].nextAction=document.getElementById('edit-action-'+id).value; meetings[idx].nextDate=document.getElementById('edit-date-'+id).value; meetings[idx].actionDetails=document.getElementById('edit-action-details-'+id).value; await sb.from('meetings').update({ next_action: meetings[idx].nextAction, next_date: meetings[idx].nextDate, action_details: meetings[idx].actionDetails }).eq('id', id); renderMeetings(); showToast('Action mise à jour ✓'); }
 function copyMeeting(id) {
   const m = meetings.find(x => x.id === id); if (!m) return;
   const cat = categories.find(c => c.id === m.type);
@@ -1183,7 +1192,11 @@ function formatMeetingText({ client, title, date, participants, typeLabel, summa
   return text;
 }
 function formatSummaryHtml(text) {
-  return (text||'').split('\n').filter(l => l.trim()).map(l => `<div class="summary-line">${escapeHtml(l.replace(/^[-•]\s*/, ''))}</div>`).join('');
+  return (text||'').split('\n').filter(l => l.trim()).map(l => {
+    const isBullet = /^[-•]\s*/.test(l);
+    const content = escapeHtml(l.replace(/^[-•]\s*/, ''));
+    return isBullet ? `<div class="summary-line">${content}</div>` : `<div style="margin-bottom:5px">${content}</div>`;
+  }).join('');
 }
 
 function resolveTheme(pref) {
@@ -1207,7 +1220,7 @@ function buildEntryBlock(m, includeTranscript) {
   const d = new Date(m.date).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
   let block = `--- Échange : ${m.title || 'Sans titre'} | Client : ${m.client || '—'} | Date : ${d} | Participants : ${m.participants || '—'}
 Compte rendu : ${m.summary || '—'}
-Prochaine action : ${m.nextAction ? m.nextAction + (m.nextDate ? ' (' + m.nextDate + ')' : '') : '—'}`;
+Prochaine action : ${m.nextAction ? m.nextAction + (m.nextDate ? ' (' + m.nextDate + ')' : '') : '—'}${m.actionDetails ? '\nDétail de l\'action :\n' + m.actionDetails : ''}`;
   if (includeTranscript && m.transcript) block += `\nRetranscription : ${m.transcript}`;
   return block;
 }
@@ -1438,8 +1451,9 @@ function resetAll() {
   document.getElementById('rec-participants').value='';
   document.getElementById('rec-next-action').value='';
   document.getElementById('rec-next-date').value='';
+  document.getElementById('rec-action-details').value='';
   document.getElementById('action-row').classList.remove('validated');
-  document.getElementById('action-row').style.display='none';
+  document.getElementById('action-block').style.display='none';
   actionValidated = false;
   document.getElementById('hero-strip').classList.remove('show');
   updateStatus('','Prêt. Renseignez les informations puis démarrez.');
